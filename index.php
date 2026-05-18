@@ -229,23 +229,18 @@ try { getDB(); } catch (Exception) { header('Location: install.php'); exit; }
                 <textarea id="f-solucao" rows="4" class="dt-input resize-y min-h-[88px] mono hidden" placeholder="Descreva a solução técnica aplicada..."></textarea>
             </div>
 
-            <div class="grid grid-cols-2 gap-x-3 gap-y-2">
-                <div>
-                    <label class="dt-label flex items-center gap-2">
-                        Tags
-                        <button onclick="toggleInline('new-tag-section','new-tag-nome')" class="w-4 h-4 flex items-center justify-center bg-dt-base border border-dt-border rounded text-dt-muted text-xs leading-none cursor-pointer hover:text-dt-text hover:border-dt-muted transition-colors font-normal">＋</button>
-                    </label>
-                    <input type="hidden" id="f-tags">
-                    <div id="tag-picker" class="tag-wrap flex flex-wrap gap-1.5 p-2.5 bg-dt-base border border-dt-border rounded-lg min-h-[42px] transition-all"></div>
-                    <div id="new-tag-section" class="hidden mt-2 flex gap-1.5">
-                        <input id="new-tag-nome" type="text" class="dt-input flex-1 !py-1.5 !text-xs" placeholder="Nome">
-                        <input id="new-tag-cor" type="color" class="dt-color-pick" value="#a371f7">
-                        <button onclick="addTagModal()" class="dt-btn-xs">Criar</button>
-                    </div>
-                </div>
-                <div>
-                    <label class="dt-label">Link (PR / Ticket / Repo)</label>
-                    <input id="f-link" type="text" class="dt-input" placeholder="https://...">
+            <div>
+                <label class="dt-label flex items-center gap-1.5">
+                    Tags
+                    <button onclick="toggleInline('new-tag-section','new-tag-nome')" class="w-4 h-4 flex items-center justify-center bg-dt-base border border-dt-border rounded text-dt-muted text-xs leading-none cursor-pointer hover:text-dt-text hover:border-dt-muted transition-colors font-normal">＋</button>
+                </label>
+                <input type="hidden" id="f-tags">
+                <input type="hidden" id="f-link">
+                <div id="tag-picker" class="tag-wrap flex flex-wrap gap-1 p-2 bg-dt-base border border-dt-border rounded-lg min-h-[32px] transition-all"></div>
+                <div id="new-tag-section" class="hidden mt-1.5 flex gap-1.5">
+                    <input id="new-tag-nome" type="text" class="dt-input flex-1 !py-1 !text-xs" placeholder="Nome da tag">
+                    <input id="new-tag-cor" type="color" class="dt-color-pick" value="#a371f7">
+                    <button onclick="addTagModal()" class="dt-btn-xs">Criar</button>
                 </div>
             </div>
 
