@@ -77,7 +77,7 @@ tailwind.config = {
 
   /* ── LABELS ── */
   .dt-label {
-    @apply block text-[10px] font-semibold text-dt-muted uppercase tracking-wider mb-1.5 mt-0.5;
+    @apply block text-[10px] font-semibold text-dt-muted uppercase tracking-wider mb-1;
   }
 
   /* ── BUTTONS ── */

@@ -130,14 +130,14 @@ try { getDB(); } catch (Exception) { header('Location: install.php'); exit; }
 
     <div class="overflow-y-auto flex-1 px-4 py-4">
 
-        <div class="tab-panel flex flex-col gap-2.5" id="tab-detalhes">
+        <div class="tab-panel flex flex-col gap-2" id="tab-detalhes">
 
             <div>
                 <label class="dt-label">Título *</label>
                 <input id="f-titulo" type="text" class="dt-input" placeholder="O que foi feito?">
             </div>
 
-            <div class="grid grid-cols-3 gap-x-3 gap-y-2.5">
+            <div class="grid grid-cols-3 gap-x-3 gap-y-2">
                 <div>
                     <label class="dt-label">Tipo</label>
                     <div class="flex gap-1.5">
@@ -171,7 +171,7 @@ try { getDB(); } catch (Exception) { header('Location: install.php'); exit; }
                 </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-x-3 gap-y-2.5">
+            <div class="grid grid-cols-2 gap-x-3 gap-y-2">
                 <div>
                     <label class="dt-label">Projeto</label>
                     <div class="flex gap-1.5">
@@ -229,7 +229,7 @@ try { getDB(); } catch (Exception) { header('Location: install.php'); exit; }
                 <textarea id="f-solucao" rows="4" class="dt-input resize-y min-h-[88px] mono hidden" placeholder="Descreva a solução técnica aplicada..."></textarea>
             </div>
 
-            <div class="grid grid-cols-2 gap-x-3 gap-y-2.5">
+            <div class="grid grid-cols-2 gap-x-3 gap-y-2">
                 <div>
                     <label class="dt-label flex items-center gap-2">
                         Tags
@@ -249,7 +249,7 @@ try { getDB(); } catch (Exception) { header('Location: install.php'); exit; }
                 </div>
             </div>
 
-            <div class="grid grid-cols-3 gap-x-3 gap-y-2.5">
+            <div class="grid grid-cols-3 gap-x-3 gap-y-2">
                 <div>
                     <label class="dt-label">Data início</label>
                     <input id="f-data-inicio" type="date" class="dt-input">
