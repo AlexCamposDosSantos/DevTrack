@@ -44,14 +44,19 @@ async function loadProjetos() { projetos=await api('projetos'); buildProjetoSele
 async function loadTipos()    { tipos   =await api('tipos');    buildTipoSelects() }
 async function loadAllTags()  { allTags =await api('tags');     renderTagPicker() }
 async function loadConfig()   {
+    const cached = localStorage.getItem('dt-wip-cache')
+    const cacheTs = parseInt(localStorage.getItem('dt-wip-ts')||'0')
+    if (cached && Date.now()-cacheTs < 60000) { wipLimits=JSON.parse(cached); return }
     const cfg=await api('config_get'); wipLimits={}
     for (const [k,v] of Object.entries(cfg))
         if (k.startsWith('wip_')&&v!==null) wipLimits[k.replace('wip_','')]=parseInt(v)
+    localStorage.setItem('dt-wip-cache', JSON.stringify(wipLimits))
+    localStorage.setItem('dt-wip-ts', Date.now())
 }
 
 async function loadCards() {
     showSkeleton()
-    const data = await fetch('api.php?'+new URLSearchParams({action:'listar',...filtros})).then(r=>r.json())
+    const data = await fetch('api.php?'+new URLSearchParams({action:'listar',limit:300,...filtros})).then(r=>r.json())
     cards = data
     render()
 }
@@ -120,6 +125,11 @@ function renderBoard() {
 </div>`
         } else {
             list.innerHTML = colCards.map(renderCard).join('')
+            list.querySelectorAll('.k-card').forEach(el => {
+                el.addEventListener('dragstart', onDragStart)
+                el.addEventListener('dragend',   onDragEnd)
+                el.addEventListener('dragover',  onCardDragOver)
+            })
         }
 
         if (countEl) countEl.textContent = colCards.length
@@ -137,15 +147,13 @@ function renderBoard() {
             }
         }
 
-        list.querySelectorAll('.k-card').forEach(el => {
-            el.addEventListener('click', () => openModal(+el.dataset.id))
-            el.addEventListener('dragstart', onDragStart)
-            el.addEventListener('dragend',   onDragEnd)
-            el.addEventListener('dragover',  onCardDragOver)
-        })
-        list.addEventListener('dragover',  onListDragOver)
-        list.addEventListener('dragleave', onDragLeave)
-        list.addEventListener('drop',      onDrop)
+        if (!list._delegated) {
+            list.addEventListener('click',    onListClick)
+            list.addEventListener('dragover',  onListDragOver)
+            list.addEventListener('dragleave', onDragLeave)
+            list.addEventListener('drop',      onDrop)
+            list._delegated = true
+        }
     })
 }
 
@@ -180,12 +188,17 @@ function renderCard(c) {
         ${c.solicitado_por?`<p class="text-xs text-dt-muted/70 mb-1.5">👤 ${esc(c.solicitado_por)}</p>`:''}
         ${tags?`<div class="flex flex-wrap gap-1 mb-1.5">${tags}</div>`:''}
         <div class="flex items-center gap-2 mt-2 pt-1.5 border-t border-dt-border/30">
-            ${c.link?`<a href="${esc(c.link)}" target="_blank" rel="noopener" class="text-xs text-dt-muted/60 hover:text-dt-accent transition-colors" onclick="event.stopPropagation()" title="Abrir link">🔗</a>`:''}
             ${c.tempo_gasto>0?`<span class="text-xs text-dt-muted/60">⏱ ${fmtTime(c.tempo_gasto)}</span>`:''}
-            <span class="text-[11px] text-dt-muted/50 ml-auto tabular-nums">${fmtDate(c.criado_em)}</span>
+            <span class="text-[11px] text-dt-muted/50 ml-auto tabular-nums" title="${c.atualizado_em?'Atualizado em '+fmtDateTime(c.atualizado_em):''}">${c.atualizado_em?'✎ '+fmtDate(c.atualizado_em):fmtDate(c.criado_em)}</span>
         </div>
     </div>
 </div>`
+}
+
+/* ─── EVENT DELEGATION ─── */
+function onListClick(e) {
+    const card = e.target.closest('.k-card')
+    if (card) openModal(+card.dataset.id)
 }
 
 /* ─── DRAG & DROP ─── */
@@ -371,11 +384,11 @@ async function moveCardInline(id, coluna) {
 }
 async function deleteCardById(id, event) {
     event?.stopPropagation()
-    if (!confirm('Excluir esta atividade?')) return
+    if (!confirm('Mover para a lixeira?')) return
     await api('deletar', {id})
     cards = cards.filter(c=>c.id!==id)
     render()
-    toast('Excluída', 'ok')
+    toastUndo('Atividade excluída', async () => { await api('restaurar',{id}); await loadCards(); toast('Restaurada','ok') })
 }
 
 /* ─── MODAL ─── */
@@ -481,9 +494,11 @@ async function saveCard() {
 }
 
 async function deleteCard() {
-    if (!editingId || !confirm('Excluir?')) return
-    await api('deletar', {id:editingId})
-    toast('Excluída','ok'); closeModal(); await loadCards()
+    if (!editingId || !confirm('Mover para a lixeira?')) return
+    const id = editingId
+    await api('deletar', {id})
+    closeModal(); await loadCards()
+    toastUndo('Atividade excluída', async () => { await api('restaurar',{id}); await loadCards(); toast('Restaurada','ok') })
 }
 
 /* ─── PROJETOS ─── */
@@ -611,7 +626,16 @@ function toast(msg, type='ok') {
             : 'bg-dt-surface/95 border-dt-red/30 text-dt-text border-l-[3px] border-l-dt-red'}`
     el.innerHTML = `<span class="text-base">${type==='ok'?'✓':'✗'}</span><span>${esc(msg)}</span>`
     document.getElementById('toast-container').appendChild(el)
-    setTimeout(() => el.remove(), 3000)
+    setTimeout(() => el.remove(), type==='err' ? 5000 : 3000)
+}
+
+function toastUndo(msg, onUndo) {
+    const el = document.createElement('div')
+    el.className = `pointer-events-auto flex items-center gap-2.5 px-4 py-2.5 rounded-xl border text-sm font-medium animate-toast shadow-card backdrop-blur-sm bg-dt-surface/95 border-dt-red/30 text-dt-text border-l-[3px] border-l-dt-red`
+    el.innerHTML = `<span class="text-base">✗</span><span class="flex-1">${esc(msg)}</span><button class="text-dt-accent text-xs font-bold hover:underline bg-transparent border-0 cursor-pointer whitespace-nowrap">Desfazer</button>`
+    el.querySelector('button').addEventListener('click', () => { el.remove(); onUndo() })
+    document.getElementById('toast-container').appendChild(el)
+    setTimeout(() => el.remove(), 6000)
 }
 
 /* ─── COLOR / TIME HELPERS ─── */

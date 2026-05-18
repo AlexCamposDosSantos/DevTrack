@@ -97,6 +97,7 @@ async function loadWip(){
 async function saveWip(col,value){
     const val=value===''?'':String(Math.max(1,parseInt(value)||1))
     await req('config_set',{['wip_'+col]:val})
+    localStorage.removeItem('dt-wip-cache')
     toast(val===''?`Limite de "${col}" removido`:`WIP "${col}" → ${val}`,'ok')
 }
 

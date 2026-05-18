@@ -1,6 +1,6 @@
 <?php
 define('DB_PATH', __DIR__ . '/data/devtrack.sqlite');
-define('DB_VERSION', 2);
+define('DB_VERSION', 3);
 
 function getDB(): PDO {
     static $pdo = null;
@@ -60,6 +60,8 @@ function initSchema(PDO $db): void {
         solicitado_por TEXT,
         ordem         INTEGER DEFAULT 0,
         criado_em     TEXT DEFAULT (datetime('now','localtime')),
+        atualizado_em TEXT,
+        deletado_em   TEXT,
         FOREIGN KEY (projeto_id) REFERENCES projetos(id) ON DELETE SET NULL
     )");
 
@@ -80,10 +82,12 @@ function initSchema(PDO $db): void {
     )");
 
     // Índices para performance
-    $db->exec("CREATE INDEX IF NOT EXISTS idx_atv_coluna   ON atividades(coluna)");
-    $db->exec("CREATE INDEX IF NOT EXISTS idx_atv_projeto  ON atividades(projeto_id)");
-    $db->exec("CREATE INDEX IF NOT EXISTS idx_atv_ordem    ON atividades(coluna, ordem)");
-    $db->exec("CREATE INDEX IF NOT EXISTS idx_hist_atv     ON historico(atividade_id)");
+    $db->exec("CREATE INDEX IF NOT EXISTS idx_atv_coluna    ON atividades(coluna)");
+    $db->exec("CREATE INDEX IF NOT EXISTS idx_atv_projeto   ON atividades(projeto_id)");
+    $db->exec("CREATE INDEX IF NOT EXISTS idx_atv_ordem     ON atividades(coluna, ordem)");
+    $db->exec("CREATE INDEX IF NOT EXISTS idx_atv_criado    ON atividades(criado_em)");
+    $db->exec("CREATE INDEX IF NOT EXISTS idx_atv_deletado  ON atividades(deletado_em)");
+    $db->exec("CREATE INDEX IF NOT EXISTS idx_hist_atv      ON historico(atividade_id)");
 
     seedDefaults($db);
 }
@@ -100,6 +104,14 @@ function runMigrations(PDO $db): void {
         try { $db->exec("ALTER TABLE historico ADD COLUMN tipo    TEXT DEFAULT 'mover'"); } catch (Exception) {}
         try { $db->exec("ALTER TABLE historico ADD COLUMN detalhe TEXT"); } catch (Exception) {}
         $db->exec("PRAGMA user_version = 2");
+    }
+
+    if ($version < 3) {
+        try { $db->exec("ALTER TABLE atividades ADD COLUMN atualizado_em TEXT"); } catch (Exception) {}
+        try { $db->exec("ALTER TABLE atividades ADD COLUMN deletado_em   TEXT"); } catch (Exception) {}
+        try { $db->exec("CREATE INDEX IF NOT EXISTS idx_atv_criado   ON atividades(criado_em)"); }   catch (Exception) {}
+        try { $db->exec("CREATE INDEX IF NOT EXISTS idx_atv_deletado ON atividades(deletado_em)"); } catch (Exception) {}
+        $db->exec("PRAGMA user_version = 3");
     }
 }
 

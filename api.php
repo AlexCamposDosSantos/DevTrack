@@ -11,6 +11,7 @@ switch ($action) {
     case 'mover':            mover();            break;
     case 'reordenar':        reordenar();        break;
     case 'deletar':          deletar();          break;
+    case 'restaurar':        restaurar();        break;
     case 'projetos':         projetos();         break;
     case 'criar_projeto':    criarProjeto();     break;
     case 'atualizar_projeto':atualizarProjeto(); break;
@@ -29,6 +30,10 @@ switch ($action) {
     default: echo json_encode(['erro' => 'Ação inválida']);
 }
 
+/* ─── CONSTANTES ─── */
+const COLUNAS_VALIDAS    = ['backlog', 'andamento', 'revisao', 'concluido', 'bloqueado'];
+const PRIORIDADES_VALIDAS = ['baixa', 'media', 'alta', 'urgente'];
+
 /* ─── HELPERS ─── */
 function input(): array {
     return (array) json_decode(file_get_contents('php://input'), true);
@@ -41,17 +46,31 @@ function safeUrl(?string $url): string {
     return $url;
 }
 
+function safeColuna(string $val, string $default = 'backlog'): string {
+    return in_array($val, COLUNAS_VALIDAS, true) ? $val : $default;
+}
+
+function safePrioridade(string $val, string $default = 'media'): string {
+    return in_array($val, PRIORIDADES_VALIDAS, true) ? $val : $default;
+}
+
+function safeDate(?string $val): ?string {
+    if (!$val) return null;
+    $d = DateTime::createFromFormat('Y-m-d', $val);
+    return ($d && $d->format('Y-m-d') === $val) ? $val : null;
+}
+
 function safeTagLike(PDO $db, string $nome): array {
-    $stmt = $db->prepare("SELECT id, tags FROM atividades WHERE tags LIKE ? ESCAPE '\\'");
-    $safe = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $nome);
-    $stmt->execute(['%' . $safe . '%']);
+    $safe = str_replace(['%', '_'], ['\%', '\_'], $nome);
+    $stmt = $db->prepare("SELECT id, tags FROM atividades WHERE tags = ? OR tags LIKE ? OR tags LIKE ? OR tags LIKE ?");
+    $stmt->execute([$nome, $safe.',%', '%,'.$safe, '%,'.$safe.',%']);
     return $stmt->fetchAll();
 }
 
 /* ─── ATIVIDADES ─── */
 function listar(): void {
     $db = getDB();
-    $where  = ['1=1'];
+    $where  = ['a.deletado_em IS NULL'];
     $params = [];
 
     if (!empty($_GET['busca'])) {
@@ -63,7 +82,7 @@ function listar(): void {
         $where[] = 'a.projeto_id = ?';
         $params[] = (int) $_GET['projeto_id'];
     }
-    if (!empty($_GET['prioridade']) && in_array($_GET['prioridade'], ['baixa','media','alta','urgente'])) {
+    if (!empty($_GET['prioridade']) && in_array($_GET['prioridade'], PRIORIDADES_VALIDAS, true)) {
         $where[] = 'a.prioridade = ?';
         $params[] = $_GET['prioridade'];
     }
@@ -72,25 +91,32 @@ function listar(): void {
         $params[] = $_GET['tipo'];
     }
     if (!empty($_GET['tag'])) {
-        // Busca por tag individual (tokenized)
+        $t    = $_GET['tag'];
+        $safe = str_replace(['%','_'], ['\%','\_'], $t);
         $where[] = '(a.tags = ? OR a.tags LIKE ? OR a.tags LIKE ? OR a.tags LIKE ?)';
-        $t = $_GET['tag'];
-        $params = array_merge($params, [$t, $t.',%', '%,'.$t, '%,'.$t.',%']);
+        $params  = array_merge($params, [$t, $safe.',%', '%,'.$safe, '%,'.$safe.',%']);
     }
-    if (!empty($_GET['de'])) {
+    if (!empty($_GET['de'])  && safeDate($_GET['de'])) {
         $where[] = "DATE(a.criado_em) >= ?";
         $params[] = $_GET['de'];
     }
-    if (!empty($_GET['ate'])) {
+    if (!empty($_GET['ate']) && safeDate($_GET['ate'])) {
         $where[] = "DATE(a.criado_em) <= ?";
         $params[] = $_GET['ate'];
     }
+
+    $limit  = min((int)($_GET['limit'] ?? 200), 500);
+    $offset = max((int)($_GET['offset'] ?? 0), 0);
 
     $sql = "SELECT a.*, p.nome AS projeto_nome, p.cor AS projeto_cor
             FROM atividades a
             LEFT JOIN projetos p ON a.projeto_id = p.id
             WHERE " . implode(' AND ', $where) . "
-            ORDER BY a.coluna, a.ordem ASC, a.criado_em DESC";
+            ORDER BY a.coluna, a.ordem ASC, a.criado_em DESC
+            LIMIT ? OFFSET ?";
+
+    $params[] = $limit;
+    $params[] = $offset;
 
     $stmt = $db->prepare($sql);
     $stmt->execute($params);
@@ -101,8 +127,14 @@ function criar(): void {
     $db = getDB();
     $d  = input();
 
+    $titulo = trim($d['titulo'] ?? '');
+    if (!$titulo) { echo json_encode(['erro' => 'Título obrigatório']); return; }
+
+    $coluna    = safeColuna($d['coluna']    ?? 'backlog');
+    $prioridade = safePrioridade($d['prioridade'] ?? 'media');
+
     $maxOrdem = $db->prepare("SELECT COALESCE(MAX(ordem),0)+1 FROM atividades WHERE coluna = ?");
-    $maxOrdem->execute([$d['coluna'] ?? 'backlog']);
+    $maxOrdem->execute([$coluna]);
     $ordem = (int) $maxOrdem->fetchColumn();
 
     $stmt = $db->prepare("INSERT INTO atividades
@@ -111,25 +143,25 @@ function criar(): void {
         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
 
     $stmt->execute([
-        trim($d['titulo'] ?? ''),
+        $titulo,
         $d['descricao']     ?? '',
         $d['solucao']       ?? '',
         $d['tipo']          ?? 'Outro',
-        $d['prioridade']    ?? 'media',
-        $d['coluna']        ?? 'backlog',
+        $prioridade,
+        $coluna,
         !empty($d['projeto_id']) ? (int)$d['projeto_id'] : null,
         $d['tags']          ?? '',
         safeUrl($d['link']  ?? ''),
         (int)($d['tempo_gasto'] ?? 0),
-        !empty($d['data_inicio']) ? $d['data_inicio'] : null,
-        !empty($d['data_fim'])    ? $d['data_fim']    : null,
+        safeDate($d['data_inicio'] ?? null),
+        safeDate($d['data_fim']    ?? null),
         trim($d['solicitado_por'] ?? ''),
         $ordem,
     ]);
 
     $id = $db->lastInsertId();
     $db->prepare("INSERT INTO historico (atividade_id, coluna_anterior, coluna_nova, tipo) VALUES (?,NULL,?,'criar')")
-       ->execute([$id, $d['coluna'] ?? 'backlog']);
+       ->execute([$id, $coluna]);
 
     echo json_encode(['ok' => true, 'id' => $id]);
 }
@@ -139,7 +171,11 @@ function atualizar(): void {
     $d  = input();
     $id = (int) $d['id'];
 
-    // Snapshot para diff
+    $titulo = trim($d['titulo'] ?? '');
+    if (!$titulo) { echo json_encode(['erro' => 'Título obrigatório']); return; }
+
+    $prioridade = safePrioridade($d['prioridade'] ?? 'media');
+
     $old = $db->prepare("SELECT * FROM atividades WHERE id = ?");
     $old->execute([$id]);
     $prev = $old->fetch();
@@ -147,31 +183,30 @@ function atualizar(): void {
     $stmt = $db->prepare("UPDATE atividades SET
         titulo=?, descricao=?, solucao=?, tipo=?, prioridade=?,
         projeto_id=?, tags=?, link=?, tempo_gasto=?, data_inicio=?,
-        data_fim=?, solicitado_por=?
+        data_fim=?, solicitado_por=?, atualizado_em=datetime('now','localtime')
         WHERE id=?");
 
     $stmt->execute([
-        trim($d['titulo']       ?? ''),
+        $titulo,
         $d['descricao']         ?? '',
         $d['solucao']           ?? '',
         $d['tipo']              ?? 'Outro',
-        $d['prioridade']        ?? 'media',
+        $prioridade,
         !empty($d['projeto_id']) ? (int)$d['projeto_id'] : null,
         $d['tags']              ?? '',
         safeUrl($d['link']      ?? ''),
         (int)($d['tempo_gasto'] ?? 0),
-        !empty($d['data_inicio']) ? $d['data_inicio'] : null,
-        !empty($d['data_fim'])    ? $d['data_fim']    : null,
+        safeDate($d['data_inicio'] ?? null),
+        safeDate($d['data_fim']    ?? null),
         trim($d['solicitado_por'] ?? ''),
         $id,
     ]);
 
-    // Log de edições relevantes
     $changes = [];
-    if ($prev && trim($d['titulo'] ?? '') !== $prev['titulo'])
+    if ($prev && $titulo !== $prev['titulo'])
         $changes[] = 'Título alterado';
-    if ($prev && ($d['prioridade'] ?? '') !== $prev['prioridade'])
-        $changes[] = 'Prioridade: ' . $prev['prioridade'] . ' → ' . $d['prioridade'];
+    if ($prev && $prioridade !== $prev['prioridade'])
+        $changes[] = 'Prioridade: ' . $prev['prioridade'] . ' → ' . $prioridade;
     if ($prev && ($d['tipo'] ?? '') !== $prev['tipo'])
         $changes[] = 'Tipo: ' . $prev['tipo'] . ' → ' . $d['tipo'];
 
@@ -188,7 +223,7 @@ function mover(): void {
     $db = getDB();
     $d  = input();
     $id = (int) $d['id'];
-    $novaColuna = $d['coluna'];
+    $novaColuna = safeColuna($d['coluna'] ?? 'backlog');
 
     $stmt = $db->prepare("SELECT coluna FROM atividades WHERE id = ?");
     $stmt->execute([$id]);
@@ -196,12 +231,11 @@ function mover(): void {
 
     if ($anterior === $novaColuna) { echo json_encode(['ok' => true]); return; }
 
-    // Coloca no topo da nova coluna
     $maxOrdem = $db->prepare("SELECT COALESCE(MAX(ordem),0)+1 FROM atividades WHERE coluna = ?");
     $maxOrdem->execute([$novaColuna]);
     $ordem = (int) $maxOrdem->fetchColumn();
 
-    $db->prepare("UPDATE atividades SET coluna=?, ordem=? WHERE id=?")
+    $db->prepare("UPDATE atividades SET coluna=?, ordem=?, atualizado_em=datetime('now','localtime') WHERE id=?")
        ->execute([$novaColuna, $ordem, $id]);
 
     $db->prepare("INSERT INTO historico (atividade_id, coluna_anterior, coluna_nova, tipo) VALUES (?,?,?,'mover')")
@@ -215,9 +249,16 @@ function reordenar(): void {
     $d   = input();
     $ids = array_map('intval', (array)($d['ids'] ?? []));
 
-    $stmt = $db->prepare("UPDATE atividades SET ordem=? WHERE id=?");
-    foreach ($ids as $i => $id) {
-        $stmt->execute([$i, $id]);
+    $db->beginTransaction();
+    try {
+        $stmt = $db->prepare("UPDATE atividades SET ordem=? WHERE id=?");
+        foreach ($ids as $i => $id) {
+            $stmt->execute([$i, $id]);
+        }
+        $db->commit();
+    } catch (Exception $e) {
+        $db->rollBack();
+        echo json_encode(['erro' => 'Falha ao reordenar']); return;
     }
     echo json_encode(['ok' => true]);
 }
@@ -225,7 +266,15 @@ function reordenar(): void {
 function deletar(): void {
     $db = getDB();
     $d  = input();
-    $db->prepare("DELETE FROM atividades WHERE id=?")->execute([(int)$d['id']]);
+    $db->prepare("UPDATE atividades SET deletado_em=datetime('now','localtime') WHERE id=?")
+       ->execute([(int)$d['id']]);
+    echo json_encode(['ok' => true]);
+}
+
+function restaurar(): void {
+    $db = getDB();
+    $d  = input();
+    $db->prepare("UPDATE atividades SET deletado_em=NULL WHERE id=?")->execute([(int)$d['id']]);
     echo json_encode(['ok' => true]);
 }
 
@@ -246,9 +295,11 @@ function projetos(): void {
 function criarProjeto(): void {
     $db = getDB();
     $d  = input();
+    $nome = trim($d['nome'] ?? '');
+    if (!$nome) { echo json_encode(['erro' => 'Nome obrigatório']); return; }
     $stmt = $db->prepare("INSERT INTO projetos (nome, cor) VALUES (?,?)");
-    $stmt->execute([trim($d['nome']), $d['cor'] ?? '#6c757d']);
-    echo json_encode(['ok'=>true,'id'=>$db->lastInsertId(),'nome'=>$d['nome'],'cor'=>$d['cor'] ?? '#6c757d']);
+    $stmt->execute([$nome, $d['cor'] ?? '#6c757d']);
+    echo json_encode(['ok'=>true,'id'=>$db->lastInsertId(),'nome'=>$nome,'cor'=>$d['cor'] ?? '#6c757d']);
 }
 
 function atualizarProjeto(): void {
