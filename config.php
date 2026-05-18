@@ -35,8 +35,9 @@
             <?php
             $wipCols=[
                 ['id'=>'backlog',   'label'=>'Backlog',      'color'=>'#8b949e'],
-                ['id'=>'andamento', 'label'=>'Em Andamento', 'color'=>'#58a6ff'],
-                ['id'=>'revisao',   'label'=>'Em Revisão',   'color'=>'#a371f7'],
+                ['id'=>'andamento',  'label'=>'Em Andamento',      'color'=>'#58a6ff'],
+                ['id'=>'aguardando', 'label'=>'Aguardando Retorno', 'color'=>'#d29922'],
+                ['id'=>'revisao',    'label'=>'Em Revisão',         'color'=>'#a371f7'],
                 ['id'=>'concluido', 'label'=>'Concluído',    'color'=>'#3fb950'],
                 ['id'=>'bloqueado', 'label'=>'Bloqueado',    'color'=>'#f85149'],
             ];

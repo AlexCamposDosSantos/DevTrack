@@ -1,13 +1,14 @@
 /* DevTrack – Kanban JS */
 
 const COLUNAS = [
-    { id: 'backlog',   label: 'Backlog',      color: '#8b949e' },
-    { id: 'andamento', label: 'Em Andamento', color: '#58a6ff' },
-    { id: 'revisao',   label: 'Em Revisão',   color: '#a371f7' },
-    { id: 'concluido', label: 'Concluído',    color: '#3fb950' },
-    { id: 'bloqueado', label: 'Bloqueado',    color: '#f85149' },
+    { id: 'backlog',    label: 'Backlog',           color: '#8b949e' },
+    { id: 'andamento',  label: 'Em Andamento',      color: '#58a6ff' },
+    { id: 'aguardando', label: 'Aguardando Retorno', color: '#d29922' },
+    { id: 'revisao',    label: 'Em Revisão',        color: '#a371f7' },
+    { id: 'concluido',  label: 'Concluído',         color: '#3fb950' },
+    { id: 'bloqueado',  label: 'Bloqueado',         color: '#f85149' },
 ]
-const COL_LABELS = { backlog:'Backlog', andamento:'Em Andamento', revisao:'Em Revisão', concluido:'Concluído', bloqueado:'Bloqueado' }
+const COL_LABELS = { backlog:'Backlog', andamento:'Em Andamento', aguardando:'Aguardando Retorno', revisao:'Em Revisão', concluido:'Concluído', bloqueado:'Bloqueado' }
 const PRIORIDADES = {
     baixa:   { label:'Baixa',   color:'#3fb950' },
     media:   { label:'Média',   color:'#d29922' },
@@ -271,7 +272,7 @@ async function onDrop(e) {
 
 /* ─── TABLE VIEW ─── */
 const PRI_ORDER = { urgente:4, alta:3, media:2, baixa:1 }
-const COL_ORDER = { backlog:1, andamento:2, revisao:3, concluido:4, bloqueado:5 }
+const COL_ORDER = { backlog:1, andamento:2, aguardando:3, revisao:4, concluido:5, bloqueado:6 }
 
 function getSorted() {
     return [...cards].sort((a,b) => {

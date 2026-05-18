@@ -3,7 +3,7 @@ header('Content-Type: application/json; charset=utf-8');
 require_once 'db.php';
 
 /* ─── CONSTANTES ─── */
-const COLUNAS_VALIDAS     = ['backlog', 'andamento', 'revisao', 'concluido', 'bloqueado'];
+const COLUNAS_VALIDAS     = ['backlog', 'andamento', 'aguardando', 'revisao', 'concluido', 'bloqueado'];
 const PRIORIDADES_VALIDAS = ['baixa', 'media', 'alta', 'urgente'];
 
 $action = $_GET['action'] ?? '';

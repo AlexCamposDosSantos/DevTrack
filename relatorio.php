@@ -40,8 +40,9 @@ $porTipo = [];
 foreach ($atividades as $a) $porTipo[$a['tipo']] = ($porTipo[$a['tipo']] ?? 0) + 1;
 
 $COLUNAS = [
-    'backlog' => 'Backlog', 'andamento' => 'Em Andamento',
-    'revisao' => 'Em Revisão', 'concluido' => 'Concluído', 'bloqueado' => 'Bloqueado',
+    'backlog'    => 'Backlog',    'andamento'  => 'Em Andamento',
+    'aguardando' => 'Aguardando Retorno',
+    'revisao'    => 'Em Revisão', 'concluido'  => 'Concluído', 'bloqueado' => 'Bloqueado',
 ];
 
 function fmtMin(int $min): string {
@@ -205,11 +206,12 @@ if (($_GET['formato'] ?? '') === 'csv') {
         <tbody>
         <?php
         $colChips = [
-            'backlog'   => ['#1e2329','#8b949e'],
-            'andamento' => ['#0c2040','#58a6ff'],
-            'revisao'   => ['#2d1f4a','#a371f7'],
-            'concluido' => ['#0d2b1a','#3fb950'],
-            'bloqueado' => ['#3d1a1a','#f85149'],
+            'backlog'    => ['#1e2329','#8b949e'],
+            'andamento'  => ['#0c2040','#58a6ff'],
+            'aguardando' => ['#2b2000','#d29922'],
+            'revisao'    => ['#2d1f4a','#a371f7'],
+            'concluido'  => ['#0d2b1a','#3fb950'],
+            'bloqueado'  => ['#3d1a1a','#f85149'],
         ];
         $priColors = ['baixa'=>'#3fb950','media'=>'#d29922','alta'=>'#f0883e','urgente'=>'#f85149'];
         foreach ($atividades as $i => $a):

@@ -172,7 +172,7 @@ function seedDefaults(PDO $db): void {
     }
 
     // Configs padrão: WIP limits (null = sem limite)
-    $wips = ['wip_backlog', 'wip_andamento', 'wip_revisao', 'wip_concluido', 'wip_bloqueado'];
+    $wips = ['wip_backlog', 'wip_andamento', 'wip_aguardando', 'wip_revisao', 'wip_concluido', 'wip_bloqueado'];
     foreach ($wips as $k) {
         $db->prepare("INSERT OR IGNORE INTO configuracoes (chave, valor) VALUES (?, NULL)")
            ->execute([$k]);

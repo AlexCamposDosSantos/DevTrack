@@ -89,8 +89,9 @@ try { getDB(); } catch (Exception) { header('Location: install.php'); exit; }
     <?php
     $cols = [
         ['id'=>'backlog',   'label'=>'Backlog',      'color'=>'#8b949e'],
-        ['id'=>'andamento', 'label'=>'Em Andamento', 'color'=>'#58a6ff'],
-        ['id'=>'revisao',   'label'=>'Em Revisão',   'color'=>'#a371f7'],
+        ['id'=>'andamento',  'label'=>'Em Andamento',      'color'=>'#58a6ff'],
+        ['id'=>'aguardando', 'label'=>'Aguardando Retorno', 'color'=>'#d29922'],
+        ['id'=>'revisao',    'label'=>'Em Revisão',         'color'=>'#a371f7'],
         ['id'=>'concluido', 'label'=>'Concluído',    'color'=>'#3fb950'],
         ['id'=>'bloqueado', 'label'=>'Bloqueado',    'color'=>'#f85149'],
     ];
@@ -164,6 +165,7 @@ try { getDB(); } catch (Exception) { header('Location: install.php'); exit; }
                     <select id="f-coluna" class="dt-select sel">
                         <option value="backlog">Backlog</option>
                         <option value="andamento">Em Andamento</option>
+                        <option value="aguardando">Aguardando Retorno</option>
                         <option value="revisao">Em Revisão</option>
                         <option value="concluido">Concluído</option>
                         <option value="bloqueado">Bloqueado</option>
