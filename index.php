@@ -197,7 +197,36 @@ try { getDB(); } catch (Exception) { header('Location: install.php'); exit; }
 
             <div>
                 <label class="dt-label">Solução / O que foi feito</label>
-                <textarea id="f-solucao" rows="4" class="dt-input resize-y min-h-[88px] mono" placeholder="Solução técnica aplicada..."></textarea>
+                <select id="f-solucao-preset" class="dt-select sel mb-2" onchange="onSolucaoPreset(this.value)">
+                    <option value="">— Selecione uma mensagem pronta —</option>
+                    <optgroup label="Conclusão">
+                        <option value="Projeto realizado com sucesso.">Projeto realizado com sucesso</option>
+                        <option value="Funcionalidade implementada e testada.">Funcionalidade implementada e testada</option>
+                        <option value="Tarefa concluída conforme solicitado.">Tarefa concluída conforme solicitado</option>
+                        <option value="Deploy realizado com sucesso em produção.">Deploy realizado em produção</option>
+                        <option value="Correção aplicada e validada em ambiente de produção.">Correção aplicada e validada</option>
+                    </optgroup>
+                    <optgroup label="Desenvolvimento">
+                        <option value="Código refatorado para melhorar legibilidade e manutenção.">Código refatorado</option>
+                        <option value="Nova API desenvolvida e documentada.">Nova API desenvolvida e documentada</option>
+                        <option value="Integração com serviço externo implementada.">Integração com serviço externo</option>
+                        <option value="Otimização de consulta ao banco de dados realizada.">Otimização de consulta ao banco</option>
+                        <option value="Testes automatizados criados e passando.">Testes automatizados criados</option>
+                    </optgroup>
+                    <optgroup label="Correção">
+                        <option value="Bug identificado e corrigido.">Bug identificado e corrigido</option>
+                        <option value="Hotfix aplicado com urgência.">Hotfix aplicado com urgência</option>
+                        <option value="Problema de performance identificado e resolvido.">Problema de performance resolvido</option>
+                        <option value="Falha de segurança corrigida.">Falha de segurança corrigida</option>
+                    </optgroup>
+                    <optgroup label="Comunicação">
+                        <option value="Reunião realizada e alinhamentos documentados.">Reunião realizada e alinhamentos documentados</option>
+                        <option value="Documentação atualizada.">Documentação atualizada</option>
+                        <option value="Revisão de código realizada e aprovada.">Revisão de código aprovada</option>
+                    </optgroup>
+                    <option value="__custom__">✏️ Adicionar comentário personalizado...</option>
+                </select>
+                <textarea id="f-solucao" rows="4" class="dt-input resize-y min-h-[88px] mono hidden" placeholder="Descreva a solução técnica aplicada..."></textarea>
             </div>
 
             <div class="grid grid-cols-2 gap-3">
@@ -258,6 +287,40 @@ try { getDB(); } catch (Exception) { header('Location: install.php'); exit; }
 
 <script src="assets/js/kanban.js"></script>
 <script>
+function onSolucaoPreset(val) {
+    const ta = document.getElementById('f-solucao');
+    if (val === '__custom__') {
+        ta.classList.remove('hidden');
+        ta.value = '';
+        ta.focus();
+    } else if (val === '') {
+        ta.classList.add('hidden');
+        ta.value = '';
+    } else {
+        ta.classList.remove('hidden');
+        ta.value = val;
+    }
+}
+
+// Ao abrir modal com card existente que já tem solução, mostra o textarea
+window.addEventListener('load', function() {
+    const _orig = window.openModal;
+    window.openModal = function(card, col) {
+        _orig(card, col);
+        const ta     = document.getElementById('f-solucao');
+        const preset = document.getElementById('f-solucao-preset');
+        const val    = ta ? ta.value.trim() : '';
+        if (val) {
+            const match = [...preset.options].find(o => o.value === val && o.value !== '' && o.value !== '__custom__');
+            preset.value = match ? val : '__custom__';
+            ta.classList.remove('hidden');
+        } else {
+            preset.value = '';
+            ta.classList.add('hidden');
+        }
+    };
+});
+
 function toggleInline(sId, fId) {
     const s = document.getElementById(sId);
     const isHidden = s.classList.contains('hidden');
