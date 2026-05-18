@@ -1,0 +1,21 @@
+# Banco de dados SQLite (dados locais)
+data/*.sqlite
+data/*.sqlite-wal
+data/*.sqlite-shm
+
+# Node (arquivos da fase React — não usados na versão PHP+Tailwind)
+node_modules/
+dist/
+
+# Ambiente
+.env
+.env.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
