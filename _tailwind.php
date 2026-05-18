@@ -56,35 +56,35 @@ tailwind.config = {
   /* ── INPUTS ── */
   .dt-input {
     @apply w-full bg-dt-base border border-dt-border rounded-lg text-dt-text
-           px-3 py-2 text-sm outline-none transition-all
+           px-2.5 py-1.5 text-xs outline-none transition-all
            placeholder:text-dt-muted
            focus:border-dt-accent focus:ring-2 focus:ring-dt-accent/10;
   }
   .dt-input-sm {
-    @apply dt-input py-1.5 text-xs;
+    @apply dt-input py-1 text-xs;
   }
 
   /* ── SELECTS ── */
   /* Nota: padding-right e arrow são aplicados via .sel no app.css */
   .dt-select {
     @apply w-full bg-dt-base border border-dt-border rounded-lg text-dt-text
-           px-3 py-2 text-sm outline-none transition-all cursor-pointer
+           px-2.5 py-1.5 text-xs outline-none transition-all cursor-pointer
            focus:border-dt-accent focus:ring-2 focus:ring-dt-accent/10;
   }
   .dt-select-sm {
-    @apply dt-select py-1.5 text-xs;
+    @apply dt-select py-1 text-xs;
   }
 
   /* ── LABELS ── */
   .dt-label {
-    @apply block text-xs font-semibold text-dt-muted uppercase tracking-wider mb-1.5;
+    @apply block text-[10px] font-semibold text-dt-muted uppercase tracking-wider mb-1;
   }
 
   /* ── BUTTONS ── */
   .dt-btn {
     @apply inline-flex items-center justify-center gap-1.5
-           bg-dt-accent text-dt-base font-semibold rounded-lg px-4 py-2
-           text-sm cursor-pointer border-0
+           bg-dt-accent text-dt-base font-semibold rounded-lg px-3.5 py-1.5
+           text-xs cursor-pointer border-0
            hover:opacity-85 active:scale-95 transition-all whitespace-nowrap;
   }
   .dt-btn-sm {

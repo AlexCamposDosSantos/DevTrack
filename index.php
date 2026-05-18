@@ -117,18 +117,18 @@ try { getDB(); } catch (Exception) { header('Location: install.php'); exit; }
 <div id="modal-backdrop" class="fixed inset-0 z-[100] hidden items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
 <div class="modal-box-inner bg-dt-surface border border-dt-border/80 rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden shadow-modal">
 
-    <div class="flex items-center gap-3 px-5 py-4 border-b border-dt-border flex-shrink-0">
-        <span id="modal-title-text" class="font-semibold text-base flex-1 tracking-tight">Nova Atividade</span>
+    <div class="flex items-center gap-3 px-4 py-3 border-b border-dt-border flex-shrink-0">
+        <span id="modal-title-text" class="font-semibold text-sm flex-1 tracking-tight">Nova Atividade</span>
         <button id="btn-delete-card" onclick="deleteCard()" style="display:none" class="dt-btn-danger">🗑 Excluir</button>
-        <button onclick="closeModal()" class="w-7 h-7 flex items-center justify-center text-dt-muted hover:text-dt-text hover:bg-dt-border/60 rounded-lg cursor-pointer bg-transparent border-0 transition-colors text-base">✕</button>
+        <button onclick="closeModal()" class="w-6 h-6 flex items-center justify-center text-dt-muted hover:text-dt-text hover:bg-dt-border/60 rounded-lg cursor-pointer bg-transparent border-0 transition-colors text-sm">✕</button>
     </div>
 
     <div class="flex border-b border-dt-border flex-shrink-0 px-1">
-        <button class="modal-tab px-4 py-2.5 text-sm font-medium border-b-2 border-dt-accent text-dt-accent cursor-pointer bg-transparent border-x-0 border-t-0 transition-colors" data-tab="detalhes" onclick="switchTab('detalhes')">Detalhes</button>
-        <button class="modal-tab px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-dt-muted hover:text-dt-text cursor-pointer bg-transparent border-x-0 border-t-0 transition-colors" data-tab="historico" onclick="switchTab('historico')">Histórico</button>
+        <button class="modal-tab px-3 py-2 text-xs font-medium border-b-2 border-dt-accent text-dt-accent cursor-pointer bg-transparent border-x-0 border-t-0 transition-colors" data-tab="detalhes" onclick="switchTab('detalhes')">Detalhes</button>
+        <button class="modal-tab px-3 py-2 text-xs font-medium border-b-2 border-transparent text-dt-muted hover:text-dt-text cursor-pointer bg-transparent border-x-0 border-t-0 transition-colors" data-tab="historico" onclick="switchTab('historico')">Histórico</button>
     </div>
 
-    <div class="overflow-y-auto flex-1 px-5 py-5 space-y-4">
+    <div class="overflow-y-auto flex-1 px-4 py-4 space-y-3">
 
         <div class="tab-panel" id="tab-detalhes">
 
@@ -243,7 +243,7 @@ try { getDB(); } catch (Exception) { header('Location: install.php'); exit; }
 
     </div>
 
-    <div class="flex items-center justify-between px-5 py-3.5 border-t border-dt-border flex-shrink-0 bg-dt-base/30">
+    <div class="flex items-center justify-between px-4 py-2.5 border-t border-dt-border flex-shrink-0 bg-dt-base/30">
         <span class="text-xs text-dt-muted/60">Ctrl+Enter salvar · Esc fechar</span>
         <div class="flex gap-2">
             <button onclick="closeModal()" class="dt-btn-ghost dt-btn-ghost-sm">Cancelar</button>
