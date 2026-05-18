@@ -2,6 +2,10 @@
 header('Content-Type: application/json; charset=utf-8');
 require_once 'db.php';
 
+/* ─── CONSTANTES ─── */
+const COLUNAS_VALIDAS     = ['backlog', 'andamento', 'revisao', 'concluido', 'bloqueado'];
+const PRIORIDADES_VALIDAS = ['baixa', 'media', 'alta', 'urgente'];
+
 $action = $_GET['action'] ?? '';
 
 switch ($action) {
@@ -29,10 +33,6 @@ switch ($action) {
     case 'config_set':       configSet();        break;
     default: echo json_encode(['erro' => 'Ação inválida']);
 }
-
-/* ─── CONSTANTES ─── */
-const COLUNAS_VALIDAS    = ['backlog', 'andamento', 'revisao', 'concluido', 'bloqueado'];
-const PRIORIDADES_VALIDAS = ['baixa', 'media', 'alta', 'urgente'];
 
 /* ─── HELPERS ─── */
 function input(): array {
