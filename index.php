@@ -128,7 +128,7 @@ try { getDB(); } catch (Exception) { header('Location: install.php'); exit; }
         <button class="modal-tab px-3 py-2 text-xs font-medium border-b-2 border-transparent text-dt-muted hover:text-dt-text cursor-pointer bg-transparent border-x-0 border-t-0 transition-colors" data-tab="historico" onclick="switchTab('historico')">Histórico</button>
     </div>
 
-    <div class="overflow-y-auto flex-1 px-4 py-4 space-y-4">
+    <div class="overflow-y-auto flex-1 px-4 py-4 space-y-5">
 
         <div class="tab-panel" id="tab-detalhes">
 
@@ -137,7 +137,7 @@ try { getDB(); } catch (Exception) { header('Location: install.php'); exit; }
                 <input id="f-titulo" type="text" class="dt-input" placeholder="O que foi feito?">
             </div>
 
-            <div class="grid grid-cols-3 gap-3">
+            <div class="grid grid-cols-3 gap-x-3 gap-y-4">
                 <div>
                     <label class="dt-label">Tipo</label>
                     <div class="flex gap-1.5">
@@ -171,7 +171,7 @@ try { getDB(); } catch (Exception) { header('Location: install.php'); exit; }
                 </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-3">
+            <div class="grid grid-cols-2 gap-x-3 gap-y-4">
                 <div>
                     <label class="dt-label">Projeto</label>
                     <div class="flex gap-1.5">
@@ -229,7 +229,7 @@ try { getDB(); } catch (Exception) { header('Location: install.php'); exit; }
                 <textarea id="f-solucao" rows="4" class="dt-input resize-y min-h-[88px] mono hidden" placeholder="Descreva a solução técnica aplicada..."></textarea>
             </div>
 
-            <div class="grid grid-cols-2 gap-3">
+            <div class="grid grid-cols-2 gap-x-3 gap-y-4">
                 <div>
                     <label class="dt-label flex items-center gap-2">
                         Tags
@@ -249,7 +249,7 @@ try { getDB(); } catch (Exception) { header('Location: install.php'); exit; }
                 </div>
             </div>
 
-            <div class="grid grid-cols-3 gap-3">
+            <div class="grid grid-cols-3 gap-x-3 gap-y-4">
                 <div>
                     <label class="dt-label">Data início</label>
                     <input id="f-data-inicio" type="date" class="dt-input">
