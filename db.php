@@ -81,13 +81,12 @@ function initSchema(PDO $db): void {
         valor TEXT
     )");
 
-    // Índices para performance
-    $db->exec("CREATE INDEX IF NOT EXISTS idx_atv_coluna    ON atividades(coluna)");
-    $db->exec("CREATE INDEX IF NOT EXISTS idx_atv_projeto   ON atividades(projeto_id)");
-    $db->exec("CREATE INDEX IF NOT EXISTS idx_atv_ordem     ON atividades(coluna, ordem)");
-    $db->exec("CREATE INDEX IF NOT EXISTS idx_atv_criado    ON atividades(criado_em)");
-    $db->exec("CREATE INDEX IF NOT EXISTS idx_atv_deletado  ON atividades(deletado_em)");
-    $db->exec("CREATE INDEX IF NOT EXISTS idx_hist_atv      ON historico(atividade_id)");
+    // Índices para performance (apenas colunas que existem no schema base)
+    $db->exec("CREATE INDEX IF NOT EXISTS idx_atv_coluna  ON atividades(coluna)");
+    $db->exec("CREATE INDEX IF NOT EXISTS idx_atv_projeto ON atividades(projeto_id)");
+    $db->exec("CREATE INDEX IF NOT EXISTS idx_atv_ordem   ON atividades(coluna, ordem)");
+    $db->exec("CREATE INDEX IF NOT EXISTS idx_atv_criado  ON atividades(criado_em)");
+    $db->exec("CREATE INDEX IF NOT EXISTS idx_hist_atv    ON historico(atividade_id)");
 
     seedDefaults($db);
 }
@@ -107,10 +106,9 @@ function runMigrations(PDO $db): void {
     }
 
     if ($version < 3) {
-        try { $db->exec("ALTER TABLE atividades ADD COLUMN atualizado_em TEXT"); } catch (Exception) {}
-        try { $db->exec("ALTER TABLE atividades ADD COLUMN deletado_em   TEXT"); } catch (Exception) {}
-        try { $db->exec("CREATE INDEX IF NOT EXISTS idx_atv_criado   ON atividades(criado_em)"); }   catch (Exception) {}
-        try { $db->exec("CREATE INDEX IF NOT EXISTS idx_atv_deletado ON atividades(deletado_em)"); } catch (Exception) {}
+        try { $db->exec("ALTER TABLE atividades ADD COLUMN atualizado_em TEXT"); } catch (\Exception $e) {}
+        try { $db->exec("ALTER TABLE atividades ADD COLUMN deletado_em   TEXT"); } catch (\Exception $e) {}
+        try { $db->exec("CREATE INDEX IF NOT EXISTS idx_atv_deletado ON atividades(deletado_em)"); } catch (\Exception $e) {}
         $db->exec("PRAGMA user_version = 3");
     }
 }
