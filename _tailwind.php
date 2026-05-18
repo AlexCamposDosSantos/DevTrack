@@ -141,11 +141,15 @@ tailwind.config = {
 
   /* ── CONFIG ITEM ROW ── */
   .dt-item-row {
-    @apply flex items-center gap-2 px-3 py-2.5 group
+    @apply flex items-center gap-2 px-3 py-2.5
            hover:bg-dt-card transition-colors;
   }
   .dt-item-actions {
-    @apply flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-auto;
+    @apply flex gap-1 ml-auto transition-opacity;
+    opacity: 0;
+  }
+  .dt-item-row:hover .dt-item-actions {
+    opacity: 1;
   }
   .dt-item-edit-btn {
     @apply text-dt-muted p-1 rounded-md hover:bg-dt-border hover:text-dt-text
