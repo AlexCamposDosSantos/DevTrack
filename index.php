@@ -128,7 +128,7 @@ try { getDB(); } catch (Exception) { header('Location: install.php'); exit; }
         <button class="modal-tab px-3 py-2 text-xs font-medium border-b-2 border-transparent text-dt-muted hover:text-dt-text cursor-pointer bg-transparent border-x-0 border-t-0 transition-colors" data-tab="historico" onclick="switchTab('historico')">Histórico</button>
     </div>
 
-    <div class="overflow-y-auto flex-1 px-4 py-4 space-y-3">
+    <div class="overflow-y-auto flex-1 px-4 py-4 space-y-4">
 
         <div class="tab-panel" id="tab-detalhes">
 
