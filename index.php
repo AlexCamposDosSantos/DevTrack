@@ -259,6 +259,19 @@ try { getDB(); } catch (Exception) { header('Location: install.php'); exit; }
                 </div>
             </div>
 
+            <!-- ── ETAPAS ── -->
+            <div id="etapas-section" class="hidden">
+                <div class="flex items-center gap-2 mb-2">
+                    <label class="dt-label mb-0">Etapas</label>
+                    <span id="etapas-count" class="text-[10px] font-semibold text-dt-muted bg-dt-base border border-dt-border rounded-full px-1.5 py-0.5 tabular-nums">0</span>
+                </div>
+                <div id="etapas-list" class="flex flex-col gap-1.5 mb-2"></div>
+                <div class="flex gap-1.5">
+                    <input id="nova-etapa-texto" type="text" class="dt-input flex-1" placeholder="Descreva a etapa atual..." onkeydown="if(event.key==='Enter'){event.preventDefault();adicionarEtapa()}">
+                    <button onclick="adicionarEtapa()" class="dt-btn dt-btn-sm whitespace-nowrap">+ Etapa</button>
+                </div>
+            </div>
+
         </div><!-- /tab-detalhes -->
 
         <div class="tab-panel hidden" id="tab-historico">

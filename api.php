@@ -31,6 +31,10 @@ switch ($action) {
     case 'deletar_tag':      deletarTag();       break;
     case 'config_get':       configGet();        break;
     case 'config_set':       configSet();        break;
+    case 'etapas':           etapasListar();     break;
+    case 'criar_etapa':      etapasCriar();      break;
+    case 'atualizar_etapa':  etapasAtualizar();  break;
+    case 'deletar_etapa':    etapasDeletar();    break;
     default: echo json_encode(['erro' => 'Ação inválida']);
 }
 
@@ -421,6 +425,43 @@ function deletarTag(): void {
         }
     }
     $db->prepare("DELETE FROM tags WHERE id=?")->execute([$id]);
+    echo json_encode(['ok' => true]);
+}
+
+/* ─── ETAPAS ─── */
+function etapasListar(): void {
+    $db = getDB();
+    $stmt = $db->prepare("SELECT * FROM etapas WHERE atividade_id=? ORDER BY criado_em ASC");
+    $stmt->execute([(int)($_GET['id'] ?? 0)]);
+    echo json_encode($stmt->fetchAll());
+}
+
+function etapasCriar(): void {
+    $db = getDB();
+    $d  = input();
+    $texto = trim($d['texto'] ?? '');
+    if (!$texto) { echo json_encode(['erro' => 'Texto obrigatório']); return; }
+    $stmt = $db->prepare("INSERT INTO etapas (atividade_id, texto) VALUES (?,?)");
+    $stmt->execute([(int)$d['atividade_id'], $texto]);
+    $id = $db->lastInsertId();
+    $row = $db->prepare("SELECT * FROM etapas WHERE id=?");
+    $row->execute([$id]);
+    echo json_encode(['ok' => true, 'etapa' => $row->fetch()]);
+}
+
+function etapasAtualizar(): void {
+    $db = getDB();
+    $d  = input();
+    $texto = trim($d['texto'] ?? '');
+    if (!$texto) { echo json_encode(['erro' => 'Texto obrigatório']); return; }
+    $db->prepare("UPDATE etapas SET texto=? WHERE id=?")->execute([$texto, (int)$d['id']]);
+    echo json_encode(['ok' => true]);
+}
+
+function etapasDeletar(): void {
+    $db = getDB();
+    $d  = input();
+    $db->prepare("DELETE FROM etapas WHERE id=?")->execute([(int)$d['id']]);
     echo json_encode(['ok' => true]);
 }
 

@@ -19,6 +19,7 @@ const HIST_LABELS = { mover:'↔ Movido', editar:'✏ Editado', criar:'✚ Criad
 let cards=[], projetos=[], tipos=[], allTags=[], selectedTags=new Set(), wipLimits={}
 let filtros={ busca:'', projeto_id:'', prioridade:'', tipo:'', de:'', ate:'' }
 let editingId=null, dragCardId=null, searchTimer=null
+let etapas=[]
 let currentView=localStorage.getItem('dt-view')||'board'
 let sortField='criado_em', sortDir='desc'
 
@@ -417,7 +418,16 @@ function openModal(id=null, defaultColuna='backlog') {
         document.getElementById(s)?.classList.add('hidden')
     })
     switchTab('detalhes')
-    if (card) loadHistory(id)
+    etapas = []
+    const etapasSection = document.getElementById('etapas-section')
+    if (card) {
+        etapasSection?.classList.remove('hidden')
+        loadEtapas(id)
+        loadHistory(id)
+    } else {
+        etapasSection?.classList.add('hidden')
+        renderEtapas()
+    }
     backdrop.classList.remove('hidden')
     backdrop.classList.add('flex')
     // Reaplica animação
@@ -627,6 +637,97 @@ function toast(msg, type='ok') {
     el.innerHTML = `<span class="text-base">${type==='ok'?'✓':'✗'}</span><span>${esc(msg)}</span>`
     document.getElementById('toast-container').appendChild(el)
     setTimeout(() => el.remove(), type==='err' ? 5000 : 3000)
+}
+
+/* ─── ETAPAS ─── */
+async function loadEtapas(id) {
+    etapas = await api('etapas', null, { id })
+    renderEtapas()
+}
+
+function renderEtapas() {
+    const list  = document.getElementById('etapas-list')
+    const count = document.getElementById('etapas-count')
+    if (!list) return
+    if (count) count.textContent = etapas.length
+    if (!etapas.length) {
+        list.innerHTML = '<p class="text-xs text-dt-muted/50 py-1">Nenhuma etapa registrada ainda.</p>'
+        return
+    }
+    list.innerHTML = etapas.map((e, i) => `
+        <div class="flex gap-2 items-start group/etapa bg-dt-base border border-dt-border rounded-lg px-3 py-2">
+            <div class="flex flex-col items-center gap-1 flex-shrink-0 mt-0.5">
+                <span class="w-5 h-5 rounded-full bg-dt-accent/15 border border-dt-accent/30 flex items-center justify-center text-[10px] font-bold text-dt-accent">${i+1}</span>
+                ${i < etapas.length-1 ? '<div class="w-px flex-1 min-h-[8px] bg-dt-border/60"></div>' : ''}
+            </div>
+            <div class="flex-1 min-w-0">
+                <div id="etapa-view-${e.id}" class="flex items-start gap-2">
+                    <p class="text-xs text-dt-text flex-1 leading-relaxed">${esc(e.texto)}</p>
+                    <div class="flex gap-1 opacity-0 group-hover/etapa:opacity-100 transition-opacity flex-shrink-0">
+                        <button onclick="editarEtapa(${e.id})" class="text-dt-muted hover:text-dt-text text-xs p-0.5 bg-transparent border-0 cursor-pointer">✏</button>
+                        <button onclick="deletarEtapa(${e.id})" class="text-dt-muted hover:text-dt-red text-xs p-0.5 bg-transparent border-0 cursor-pointer">✕</button>
+                    </div>
+                </div>
+                <div id="etapa-edit-${e.id}" class="hidden mt-1 flex gap-1.5">
+                    <input id="etapa-input-${e.id}" type="text" value="${esc(e.texto)}"
+                        class="dt-input flex-1 !py-1 !text-xs"
+                        onkeydown="if(event.key==='Enter')salvarEtapa(${e.id});if(event.key==='Escape')cancelarEditEtapa(${e.id})">
+                    <button onclick="salvarEtapa(${e.id})" class="dt-btn-xs">Ok</button>
+                    <button onclick="cancelarEditEtapa(${e.id})" class="dt-btn-ghost dt-btn-ghost-sm !px-2">✕</button>
+                </div>
+                <span class="text-[10px] text-dt-muted/50 tabular-nums">${fmtDateTime(e.criado_em)}</span>
+            </div>
+        </div>`
+    ).join('')
+
+    // CSS hover para os botões (group-hover não funciona em JS no Tailwind CDN)
+    list.querySelectorAll('[id^="etapa-view-"]').forEach(view => {
+        const card = view.closest('[class*="group/etapa"]')
+        const btns = view.querySelector('.flex.gap-1')
+        if (!card || !btns) return
+        card.addEventListener('mouseenter', () => btns.style.opacity='1')
+        card.addEventListener('mouseleave', () => btns.style.opacity='0')
+    })
+}
+
+async function adicionarEtapa() {
+    const input = document.getElementById('nova-etapa-texto')
+    const texto = input?.value.trim()
+    if (!texto || !editingId) return
+    const res = await api('criar_etapa', { atividade_id: editingId, texto })
+    if (res.erro) { toast(res.erro, 'err'); return }
+    etapas.push(res.etapa)
+    input.value = ''
+    renderEtapas()
+    input.focus()
+}
+
+function editarEtapa(id) {
+    document.getElementById('etapa-view-'+id)?.classList.add('hidden')
+    const editDiv = document.getElementById('etapa-edit-'+id)
+    editDiv?.classList.remove('hidden')
+    document.getElementById('etapa-input-'+id)?.focus()
+}
+
+function cancelarEditEtapa(id) {
+    document.getElementById('etapa-edit-'+id)?.classList.add('hidden')
+    document.getElementById('etapa-view-'+id)?.classList.remove('hidden')
+}
+
+async function salvarEtapa(id) {
+    const texto = document.getElementById('etapa-input-'+id)?.value.trim()
+    if (!texto) return
+    await api('atualizar_etapa', { id, texto })
+    const etapa = etapas.find(e => e.id === id)
+    if (etapa) etapa.texto = texto
+    renderEtapas()
+}
+
+async function deletarEtapa(id) {
+    if (!confirm('Remover esta etapa?')) return
+    await api('deletar_etapa', { id })
+    etapas = etapas.filter(e => e.id !== id)
+    renderEtapas()
 }
 
 function toastUndo(msg, onUndo) {

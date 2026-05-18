@@ -1,6 +1,6 @@
 <?php
 define('DB_PATH', __DIR__ . '/data/devtrack.sqlite');
-define('DB_VERSION', 3);
+define('DB_VERSION', 4);
 
 function getDB(): PDO {
     static $pdo = null;
@@ -81,6 +81,16 @@ function initSchema(PDO $db): void {
         valor TEXT
     )");
 
+    $db->exec("CREATE TABLE IF NOT EXISTS etapas (
+        id           INTEGER PRIMARY KEY AUTOINCREMENT,
+        atividade_id INTEGER NOT NULL,
+        texto        TEXT NOT NULL,
+        criado_em    TEXT DEFAULT (datetime('now','localtime')),
+        FOREIGN KEY (atividade_id) REFERENCES atividades(id) ON DELETE CASCADE
+    )");
+
+    $db->exec("CREATE INDEX IF NOT EXISTS idx_etapas_atv ON etapas(atividade_id)");
+
     // Índices para performance (apenas colunas que existem no schema base)
     $db->exec("CREATE INDEX IF NOT EXISTS idx_atv_coluna  ON atividades(coluna)");
     $db->exec("CREATE INDEX IF NOT EXISTS idx_atv_projeto ON atividades(projeto_id)");
@@ -103,6 +113,18 @@ function runMigrations(PDO $db): void {
         try { $db->exec("ALTER TABLE historico ADD COLUMN tipo    TEXT DEFAULT 'mover'"); } catch (Exception) {}
         try { $db->exec("ALTER TABLE historico ADD COLUMN detalhe TEXT"); } catch (Exception) {}
         $db->exec("PRAGMA user_version = 2");
+    }
+
+    if ($version < 4) {
+        $db->exec("CREATE TABLE IF NOT EXISTS etapas (
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            atividade_id INTEGER NOT NULL,
+            texto        TEXT NOT NULL,
+            criado_em    TEXT DEFAULT (datetime('now','localtime')),
+            FOREIGN KEY (atividade_id) REFERENCES atividades(id) ON DELETE CASCADE
+        )");
+        try { $db->exec("CREATE INDEX IF NOT EXISTS idx_etapas_atv ON etapas(atividade_id)"); } catch (\Exception $e) {}
+        $db->exec("PRAGMA user_version = 4");
     }
 
     if ($version < 3) {
