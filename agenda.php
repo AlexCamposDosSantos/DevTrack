@@ -190,7 +190,7 @@
             <label class="dt-label">Dias da semana</label>
             <div class="flex gap-1.5 flex-wrap">
                 <?php foreach(['Dom'=>0,'Seg'=>1,'Ter'=>2,'Qua'=>3,'Qui'=>4,'Sex'=>5,'Sáb'=>6] as $label=>$val): ?>
-                <button onclick="toggleDia(<?= $val ?>)" id="dia-<?= $val ?>"
+                <button onclick="toggleDia(<?= $val ?>)" id="dia-s-<?= $val ?>"
                     class="dia-btn w-10 h-10 rounded-lg border border-dt-border text-xs font-semibold text-dt-muted bg-dt-base cursor-pointer transition-colors hover:border-dt-muted">
                     <?= $label ?>
                 </button>
@@ -203,7 +203,7 @@
             <label class="dt-label">Dias do mês</label>
             <div class="flex flex-wrap gap-1">
                 <?php for($i=1;$i<=31;$i++): ?>
-                <button onclick="toggleDia(<?= $i ?>)" id="dia-<?= $i ?>"
+                <button onclick="toggleDia(<?= $i ?>)" id="dia-m-<?= $i ?>"
                     class="dia-btn w-8 h-8 rounded-lg border border-dt-border text-[10px] font-semibold text-dt-muted bg-dt-base cursor-pointer transition-colors hover:border-dt-muted">
                     <?= $i ?>
                 </button>
@@ -605,8 +605,9 @@ function abrirModalRecorrenciaEditar(id){
     document.getElementById('r-projeto').value=r.projeto_id||''
     ativoRec=!!r.ativo; atualizarToggleAtivo()
     // tipo e dias
-    diasSelecionados=new Set(JSON.parse(r.dias||'[]'))
     setTipoRec(r.tipo||'semanal')
+    diasSelecionados=new Set(JSON.parse(r.dias||'[]'))
+    diasSelecionados.forEach(n=>toggleDia(n))
     abrirBackdrop(recBackdrop)
     setTimeout(()=>document.getElementById('r-titulo').focus(),50)
 }
@@ -631,16 +632,22 @@ function setTipoRec(tipo){
     // Limpar seleção ao trocar tipo
     diasSelecionados=new Set()
     document.querySelectorAll('.dia-btn').forEach(b=>{
-        b.className=b.className.replace(/border-dt-accent bg-dt-accent\/10 text-dt-accent/g,'border-dt-border bg-dt-base text-dt-muted')
+        const isS=b.id.startsWith('dia-s-')
+        const size=isS?'w-10 h-10':'w-8 h-8'
+        const textSize=isS?'text-xs':'text-[10px]'
+        b.className=`dia-btn ${size} rounded-lg border ${textSize} font-semibold cursor-pointer transition-colors border-dt-border bg-dt-base text-dt-muted`
     })
 }
 
 function toggleDia(n){
     diasSelecionados.has(n)?diasSelecionados.delete(n):diasSelecionados.add(n)
-    const btn=document.getElementById('dia-'+n)
+    const prefix = tipoRec==='semanal' ? 'dia-s-' : 'dia-m-'
+    const btn=document.getElementById(prefix+n)
     if(!btn) return
     const sel=diasSelecionados.has(n)
-    btn.className=`dia-btn ${btn.className.includes('w-10')?'w-10 h-10':'w-8 h-8'} rounded-lg border text-xs font-semibold cursor-pointer transition-colors ${sel?'border-dt-accent bg-dt-accent/10 text-dt-accent':'border-dt-border bg-dt-base text-dt-muted'}`
+    const size=tipoRec==='semanal'?'w-10 h-10':'w-8 h-8'
+    const textSize=tipoRec==='semanal'?'text-xs':'text-[10px]'
+    btn.className=`dia-btn ${size} rounded-lg border ${textSize} font-semibold cursor-pointer transition-colors ${sel?'border-dt-accent bg-dt-accent/10 text-dt-accent':'border-dt-border bg-dt-base text-dt-muted'}`
 }
 
 function toggleAtivo(){
