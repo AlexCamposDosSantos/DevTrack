@@ -52,6 +52,7 @@ try { getDB(); } catch (Exception) { header('Location: install.php'); exit; }
             class="px-3 py-1.5 font-medium cursor-pointer border-0 bg-transparent text-dt-muted hover:text-dt-text transition-colors">☰ Tabela</button>
     </div>
 
+    <a href="agenda.php" class="dt-btn-ghost-sm hidden sm:inline-flex">📅 Agenda</a>
     <a href="relatorio.php" target="_blank" class="dt-btn-ghost-sm hidden sm:inline-flex">📊 Relatório</a>
     <a href="config.php" class="dt-btn-ghost-sm hidden sm:inline-flex">⚙ Config</a>
     <button onclick="openModal()" class="dt-btn dt-btn-sm">+ Nova</button>
