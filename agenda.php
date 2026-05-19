@@ -208,6 +208,10 @@
                     <?= $i ?>
                 </button>
                 <?php endfor; ?>
+                <button onclick="toggleDia(0)" id="dia-m-0"
+                    class="dia-btn h-8 px-2 rounded-lg border border-dt-border text-[10px] font-semibold text-dt-muted bg-dt-base cursor-pointer transition-colors hover:border-dt-muted whitespace-nowrap">
+                    Último dia
+                </button>
             </div>
         </div>
 
@@ -303,12 +307,15 @@ function recorrenciasParaDia(dateStr){
     const diaSemana=d.getDay()         // 0-6
     const diaMes=d.getDate()           // 1-31
 
+    const ultimoDiaMes = new Date(d.getFullYear(), d.getMonth()+1, 0).getDate()
+    const isUltimoDia  = diaMes === ultimoDiaMes
+
     return recorrencias.filter(r=>{
         if(!r.ativo) return false
         const dias=JSON.parse(r.dias||'[]')
         if(r.tipo==='diario') return true
         if(r.tipo==='semanal') return dias.includes(diaSemana)
-        if(r.tipo==='mensal')  return dias.includes(diaMes)
+        if(r.tipo==='mensal')  return dias.includes(diaMes) || (isUltimoDia && dias.includes(0))
         return false
     })
 }
@@ -491,7 +498,7 @@ function descRecorrencia(r){
     const dias=JSON.parse(r.dias||'[]')
     if(r.tipo==='diario') return 'Todo dia'
     if(r.tipo==='semanal') return 'Toda '+dias.map(d=>DIAS_SEMANA[d]).join(', ')
-    if(r.tipo==='mensal')  return 'Dia '+dias.join(', ')+' do mês'
+    if(r.tipo==='mensal')  return 'Dia '+dias.map(d=>d===0?'último':d).join(', ')+' do mês'
     return ''
 }
 
@@ -645,7 +652,8 @@ function toggleDia(n){
     const btn=document.getElementById(prefix+n)
     if(!btn) return
     const sel=diasSelecionados.has(n)
-    const size=tipoRec==='semanal'?'w-10 h-10':'w-8 h-8'
+    const isUltimo = n===0
+    const size=tipoRec==='semanal'?'w-10 h-10':isUltimo?'h-8 px-2 whitespace-nowrap':'w-8 h-8'
     const textSize=tipoRec==='semanal'?'text-xs':'text-[10px]'
     btn.className=`dia-btn ${size} rounded-lg border ${textSize} font-semibold cursor-pointer transition-colors ${sel?'border-dt-accent bg-dt-accent/10 text-dt-accent':'border-dt-border bg-dt-base text-dt-muted'}`
 }
