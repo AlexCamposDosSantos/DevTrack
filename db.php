@@ -1,6 +1,6 @@
 <?php
 define('DB_PATH', __DIR__ . '/data/devtrack.sqlite');
-define('DB_VERSION', 4);
+define('DB_VERSION', 5);
 
 function getDB(): PDO {
     static $pdo = null;
@@ -91,6 +91,20 @@ function initSchema(PDO $db): void {
 
     $db->exec("CREATE INDEX IF NOT EXISTS idx_etapas_atv ON etapas(atividade_id)");
 
+    $db->exec("CREATE TABLE IF NOT EXISTS recorrencias (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        titulo      TEXT NOT NULL,
+        descricao   TEXT,
+        tipo        TEXT NOT NULL DEFAULT 'semanal',
+        dias        TEXT NOT NULL,
+        prioridade  TEXT DEFAULT 'media',
+        projeto_id  INTEGER,
+        cor         TEXT DEFAULT '#58a6ff',
+        ativo       INTEGER DEFAULT 1,
+        criado_em   TEXT DEFAULT (datetime('now','localtime')),
+        FOREIGN KEY (projeto_id) REFERENCES projetos(id) ON DELETE SET NULL
+    )");
+
     // Índices para performance (apenas colunas que existem no schema base)
     $db->exec("CREATE INDEX IF NOT EXISTS idx_atv_coluna  ON atividades(coluna)");
     $db->exec("CREATE INDEX IF NOT EXISTS idx_atv_projeto ON atividades(projeto_id)");
@@ -113,6 +127,23 @@ function runMigrations(PDO $db): void {
         try { $db->exec("ALTER TABLE historico ADD COLUMN tipo    TEXT DEFAULT 'mover'"); } catch (Exception) {}
         try { $db->exec("ALTER TABLE historico ADD COLUMN detalhe TEXT"); } catch (Exception) {}
         $db->exec("PRAGMA user_version = 2");
+    }
+
+    if ($version < 5) {
+        $db->exec("CREATE TABLE IF NOT EXISTS recorrencias (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            titulo      TEXT NOT NULL,
+            descricao   TEXT,
+            tipo        TEXT NOT NULL DEFAULT 'semanal',
+            dias        TEXT NOT NULL,
+            prioridade  TEXT DEFAULT 'media',
+            projeto_id  INTEGER,
+            cor         TEXT DEFAULT '#58a6ff',
+            ativo       INTEGER DEFAULT 1,
+            criado_em   TEXT DEFAULT (datetime('now','localtime')),
+            FOREIGN KEY (projeto_id) REFERENCES projetos(id) ON DELETE SET NULL
+        )");
+        $db->exec("PRAGMA user_version = 5");
     }
 
     if ($version < 4) {

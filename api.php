@@ -31,6 +31,10 @@ switch ($action) {
     case 'deletar_tag':      deletarTag();       break;
     case 'config_get':       configGet();        break;
     case 'config_set':       configSet();        break;
+    case 'recorrencias':        recorrenciasListar();  break;
+    case 'criar_recorrencia':   recorrenciasCriar();   break;
+    case 'atualizar_recorrencia': recorrenciasAtualizar(); break;
+    case 'deletar_recorrencia': recorrenciasDeletar(); break;
     case 'etapas':           etapasListar();     break;
     case 'criar_etapa':      etapasCriar();      break;
     case 'atualizar_etapa':  etapasAtualizar();  break;
@@ -425,6 +429,64 @@ function deletarTag(): void {
         }
     }
     $db->prepare("DELETE FROM tags WHERE id=?")->execute([$id]);
+    echo json_encode(['ok' => true]);
+}
+
+/* ─── RECORRÊNCIAS ─── */
+function recorrenciasListar(): void {
+    $db = getDB();
+    $stmt = $db->query("SELECT r.*, p.nome AS projeto_nome FROM recorrencias r
+                        LEFT JOIN projetos p ON r.projeto_id = p.id
+                        ORDER BY r.titulo");
+    echo json_encode($stmt->fetchAll());
+}
+
+function recorrenciasCriar(): void {
+    $db = getDB();
+    $d  = input();
+    $titulo = trim($d['titulo'] ?? '');
+    if (!$titulo) { echo json_encode(['erro' => 'Título obrigatório']); return; }
+    $tipo = in_array($d['tipo'] ?? '', ['semanal','mensal','diario']) ? $d['tipo'] : 'semanal';
+    $dias = json_encode(array_map('intval', (array)($d['dias'] ?? [])));
+    $stmt = $db->prepare("INSERT INTO recorrencias (titulo, descricao, tipo, dias, prioridade, projeto_id, cor) VALUES (?,?,?,?,?,?,?)");
+    $stmt->execute([
+        $titulo,
+        $d['descricao'] ?? '',
+        $tipo,
+        $dias,
+        safePrioridade($d['prioridade'] ?? 'media'),
+        !empty($d['projeto_id']) ? (int)$d['projeto_id'] : null,
+        $d['cor'] ?? '#58a6ff',
+    ]);
+    echo json_encode(['ok' => true, 'id' => $db->lastInsertId()]);
+}
+
+function recorrenciasAtualizar(): void {
+    $db = getDB();
+    $d  = input();
+    $titulo = trim($d['titulo'] ?? '');
+    if (!$titulo) { echo json_encode(['erro' => 'Título obrigatório']); return; }
+    $tipo = in_array($d['tipo'] ?? '', ['semanal','mensal','diario']) ? $d['tipo'] : 'semanal';
+    $dias = json_encode(array_map('intval', (array)($d['dias'] ?? [])));
+    $db->prepare("UPDATE recorrencias SET titulo=?, descricao=?, tipo=?, dias=?, prioridade=?, projeto_id=?, cor=?, ativo=? WHERE id=?")
+       ->execute([
+           $titulo,
+           $d['descricao'] ?? '',
+           $tipo,
+           $dias,
+           safePrioridade($d['prioridade'] ?? 'media'),
+           !empty($d['projeto_id']) ? (int)$d['projeto_id'] : null,
+           $d['cor'] ?? '#58a6ff',
+           isset($d['ativo']) ? (int)(bool)$d['ativo'] : 1,
+           (int)$d['id'],
+       ]);
+    echo json_encode(['ok' => true]);
+}
+
+function recorrenciasDeletar(): void {
+    $db = getDB();
+    $d  = input();
+    $db->prepare("DELETE FROM recorrencias WHERE id=?")->execute([(int)$d['id']]);
     echo json_encode(['ok' => true]);
 }
 

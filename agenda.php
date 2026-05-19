@@ -19,64 +19,91 @@
     <a href="index.php" class="dt-btn-ghost-sm">← Board</a>
 </nav>
 
-<div class="max-w-[1200px] mx-auto p-5">
+<div class="max-w-[1300px] mx-auto p-5 flex gap-5">
 
-    <!-- Cabeçalho da agenda -->
-    <div class="flex items-center gap-3 mb-5">
-        <button id="btn-prev" class="dt-btn-ghost dt-btn-ghost-sm px-3">‹</button>
-        <h2 id="mes-label" class="text-base font-bold flex-1 text-center tracking-tight"></h2>
-        <button id="btn-hoje" class="dt-btn-ghost dt-btn-ghost-sm">Hoje</button>
-        <button id="btn-next" class="dt-btn-ghost dt-btn-ghost-sm px-3">›</button>
+    <!-- ── COLUNA PRINCIPAL ── -->
+    <div class="flex-1 min-w-0">
 
-        <div class="h-4 w-px bg-dt-border mx-1"></div>
-
-        <!-- Toggle visão -->
-        <div class="flex bg-dt-base border border-dt-border rounded-lg overflow-hidden text-xs">
-            <button id="btn-view-mes" onclick="setAgendaView('mes')"
-                class="px-3 py-1.5 font-medium cursor-pointer border-0 bg-dt-card text-dt-accent transition-colors">⊞ Mês</button>
-            <button id="btn-view-semana" onclick="setAgendaView('semana')"
-                class="px-3 py-1.5 font-medium cursor-pointer border-0 bg-transparent text-dt-muted hover:text-dt-text transition-colors">☰ Semana</button>
+        <!-- Controles -->
+        <div class="flex items-center gap-2 mb-4">
+            <button id="btn-prev" class="dt-btn-ghost dt-btn-ghost-sm px-3">‹</button>
+            <h2 id="mes-label" class="text-base font-bold flex-1 text-center tracking-tight"></h2>
+            <button id="btn-hoje" class="dt-btn-ghost dt-btn-ghost-sm">Hoje</button>
+            <button id="btn-next" class="dt-btn-ghost dt-btn-ghost-sm px-3">›</button>
+            <div class="h-4 w-px bg-dt-border mx-1"></div>
+            <div class="flex bg-dt-base border border-dt-border rounded-lg overflow-hidden text-xs">
+                <button id="btn-view-mes" onclick="setView('mes')"
+                    class="px-3 py-1.5 font-medium cursor-pointer border-0 bg-dt-card text-dt-accent transition-colors">⊞ Mês</button>
+                <button id="btn-view-semana" onclick="setView('semana')"
+                    class="px-3 py-1.5 font-medium cursor-pointer border-0 bg-transparent text-dt-muted hover:text-dt-text transition-colors">☰ Semana</button>
+            </div>
+            <button onclick="abrirModalNovo()" class="dt-btn dt-btn-sm">+ Nova</button>
         </div>
 
-        <button onclick="abrirModalNovo()" class="dt-btn dt-btn-sm">+ Nova</button>
-    </div>
-
-    <!-- Grade do calendário (mês) -->
-    <div id="view-mes">
-        <div class="grid grid-cols-7 mb-1">
-            <?php foreach(['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'] as $d): ?>
-            <div class="text-center text-[10px] font-semibold text-dt-muted uppercase tracking-wider py-1.5"><?= $d ?></div>
-            <?php endforeach; ?>
+        <!-- Calendário mês -->
+        <div id="view-mes">
+            <div class="grid grid-cols-7 mb-1">
+                <?php foreach(['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'] as $d): ?>
+                <div class="text-center text-[10px] font-semibold text-dt-muted uppercase tracking-wider py-1.5"><?= $d ?></div>
+                <?php endforeach; ?>
+            </div>
+            <div id="cal-grid" class="grid grid-cols-7 gap-px bg-dt-border rounded-xl overflow-hidden"></div>
         </div>
-        <div id="cal-grid" class="grid grid-cols-7 gap-px bg-dt-border rounded-xl overflow-hidden"></div>
-    </div>
 
-    <!-- Visão semana -->
-    <div id="view-semana" class="hidden">
-        <div id="semana-grid"></div>
-    </div>
-
-    <!-- Painel lateral: próximas tarefas sem data -->
-    <div class="mt-5 bg-dt-surface border border-dt-border rounded-xl overflow-hidden">
-        <div class="flex items-center gap-2 px-4 py-3 border-b border-dt-border">
-            <span class="text-sm">📋</span>
-            <span class="font-semibold text-sm flex-1">Tarefas sem data agendada</span>
-            <span id="sem-data-count" class="text-xs font-semibold text-dt-muted bg-dt-base border border-dt-border rounded-full px-2 py-0.5">0</span>
+        <!-- Calendário semana -->
+        <div id="view-semana" class="hidden">
+            <div id="semana-grid"></div>
         </div>
-        <div id="sem-data-list" class="divide-y divide-dt-border/40 max-h-52 overflow-y-auto"></div>
+
+        <!-- Tarefas sem data -->
+        <div class="mt-4 bg-dt-surface border border-dt-border rounded-xl overflow-hidden">
+            <div class="flex items-center gap-2 px-4 py-2.5 border-b border-dt-border">
+                <span class="text-sm">📋</span>
+                <span class="font-semibold text-xs flex-1">Tarefas sem data agendada</span>
+                <span id="sem-data-count" class="text-xs font-semibold text-dt-muted bg-dt-base border border-dt-border rounded-full px-2 py-0.5">0</span>
+            </div>
+            <div id="sem-data-list" class="max-h-44 overflow-y-auto divide-y divide-dt-border/40"></div>
+        </div>
+    </div>
+
+    <!-- ── SIDEBAR RECORRÊNCIAS ── -->
+    <div class="w-72 flex-shrink-0 flex flex-col gap-3">
+
+        <div class="bg-dt-surface border border-dt-border rounded-xl overflow-hidden">
+            <div class="flex items-center gap-2 px-3 py-2.5 border-b border-dt-border">
+                <span class="text-sm">🔁</span>
+                <span class="font-semibold text-xs flex-1">Tarefas Recorrentes</span>
+                <span id="rec-count" class="text-xs font-semibold text-dt-muted bg-dt-base border border-dt-border rounded-full px-2 py-0.5">0</span>
+                <button onclick="abrirModalRecorrencia()" class="dt-btn-icon w-6 h-6 text-sm" title="Nova recorrência">＋</button>
+            </div>
+            <div id="rec-list" class="divide-y divide-dt-border/40 max-h-[420px] overflow-y-auto"></div>
+        </div>
+
+        <!-- Legenda prioridades -->
+        <div class="bg-dt-surface border border-dt-border rounded-xl px-3 py-2.5">
+            <p class="text-[10px] font-semibold text-dt-muted uppercase tracking-wider mb-2">Legenda</p>
+            <div class="flex flex-col gap-1.5">
+                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-sm" style="background:#f8514922"></span><span class="text-xs text-dt-muted">🔴 Urgente</span></div>
+                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-sm" style="background:#f0883e22"></span><span class="text-xs text-dt-muted">🟠 Alta</span></div>
+                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-sm" style="background:#d2992222"></span><span class="text-xs text-dt-muted">🟡 Média</span></div>
+                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-sm" style="background:#3fb95022"></span><span class="text-xs text-dt-muted">🟢 Baixa</span></div>
+                <div class="flex items-center gap-2 mt-1 pt-1.5 border-t border-dt-border">
+                    <span class="text-xs px-1.5 rounded-sm font-bold" style="background:#58a6ff22;color:#58a6ff">🔁</span>
+                    <span class="text-xs text-dt-muted">Recorrente</span>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
-<!-- ── MODAL (reaproveitado do board) ── -->
+<!-- ── MODAL ATIVIDADE ── -->
 <div id="modal-backdrop" class="fixed inset-0 z-[100] hidden items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-<div class="modal-box-inner bg-dt-surface border border-dt-border/80 rounded-2xl w-full max-w-lg flex flex-col overflow-hidden shadow-modal">
-
-    <div class="flex items-center gap-3 px-4 py-3 border-b border-dt-border flex-shrink-0">
-        <span id="modal-title-text" class="font-semibold text-sm flex-1">Nova Atividade</span>
+<div class="bg-dt-surface border border-dt-border/80 rounded-2xl w-full max-w-lg flex flex-col overflow-hidden shadow-modal">
+    <div class="flex items-center gap-3 px-4 py-3 border-b border-dt-border">
+        <span id="modal-title" class="font-semibold text-sm flex-1">Nova Atividade</span>
         <button id="btn-delete-card" onclick="deletarCard()" style="display:none" class="dt-btn-danger">🗑 Excluir</button>
         <button onclick="fecharModal()" class="w-6 h-6 flex items-center justify-center text-dt-muted hover:text-dt-text hover:bg-dt-border/60 rounded-lg cursor-pointer bg-transparent border-0 text-sm">✕</button>
     </div>
-
     <div class="overflow-y-auto px-4 py-4 flex flex-col gap-3">
         <div>
             <label class="dt-label">Título *</label>
@@ -123,14 +150,102 @@
             <textarea id="f-descricao" rows="2" class="dt-input resize-y" placeholder="Detalhes..."></textarea>
         </div>
     </div>
-
     <div class="flex items-center justify-between px-4 py-2.5 border-t border-dt-border bg-dt-base/30 flex-shrink-0">
-        <a id="modal-link-board" href="index.php" class="text-xs text-dt-muted/60 hover:text-dt-accent no-underline hidden">Ver no board →</a>
-        <span class="text-xs text-dt-muted/60" id="modal-hint">Ctrl+Enter salvar · Esc fechar</span>
+        <a id="link-board" href="index.php" class="text-xs text-dt-muted/60 hover:text-dt-accent no-underline hidden">Ver no board →</a>
+        <span class="flex-1"></span>
         <div class="flex gap-2">
             <button onclick="fecharModal()" class="dt-btn-ghost dt-btn-ghost-sm">Cancelar</button>
             <button onclick="salvarCard()" class="dt-btn dt-btn-sm">Salvar</button>
         </div>
+    </div>
+</div>
+</div>
+
+<!-- ── MODAL RECORRÊNCIA ── -->
+<div id="modal-rec-backdrop" class="fixed inset-0 z-[100] hidden items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+<div class="bg-dt-surface border border-dt-border/80 rounded-2xl w-full max-w-md flex flex-col overflow-hidden shadow-modal">
+    <div class="flex items-center gap-3 px-4 py-3 border-b border-dt-border">
+        <span id="rec-modal-title" class="font-semibold text-sm flex-1">🔁 Nova Tarefa Recorrente</span>
+        <button id="btn-delete-rec" onclick="deletarRecorrencia()" style="display:none" class="dt-btn-danger">🗑 Excluir</button>
+        <button onclick="fecharModalRec()" class="w-6 h-6 flex items-center justify-center text-dt-muted hover:text-dt-text hover:bg-dt-border/60 rounded-lg cursor-pointer bg-transparent border-0 text-sm">✕</button>
+    </div>
+    <div class="overflow-y-auto px-4 py-4 flex flex-col gap-3">
+        <div>
+            <label class="dt-label">Título *</label>
+            <input id="r-titulo" type="text" class="dt-input" placeholder="Ex: Reunião de alinhamento">
+        </div>
+
+        <!-- Tipo de recorrência -->
+        <div>
+            <label class="dt-label">Repetir</label>
+            <div class="flex gap-2">
+                <button onclick="setTipoRec('diario')"   id="rt-diario"   class="rec-tipo-btn flex-1 py-1.5 text-xs font-semibold rounded-lg border border-dt-border bg-dt-base text-dt-muted cursor-pointer transition-colors">Todo dia</button>
+                <button onclick="setTipoRec('semanal')"  id="rt-semanal"  class="rec-tipo-btn flex-1 py-1.5 text-xs font-semibold rounded-lg border border-dt-border bg-dt-base text-dt-muted cursor-pointer transition-colors">Semanal</button>
+                <button onclick="setTipoRec('mensal')"   id="rt-mensal"   class="rec-tipo-btn flex-1 py-1.5 text-xs font-semibold rounded-lg border border-dt-border bg-dt-base text-dt-muted cursor-pointer transition-colors">Mensal</button>
+            </div>
+        </div>
+
+        <!-- Dias da semana -->
+        <div id="dias-semana-section">
+            <label class="dt-label">Dias da semana</label>
+            <div class="flex gap-1.5 flex-wrap">
+                <?php foreach(['Dom'=>0,'Seg'=>1,'Ter'=>2,'Qua'=>3,'Qui'=>4,'Sex'=>5,'Sáb'=>6] as $label=>$val): ?>
+                <button onclick="toggleDia(<?= $val ?>)" id="dia-<?= $val ?>"
+                    class="dia-btn w-10 h-10 rounded-lg border border-dt-border text-xs font-semibold text-dt-muted bg-dt-base cursor-pointer transition-colors hover:border-dt-muted">
+                    <?= $label ?>
+                </button>
+                <?php endforeach; ?>
+            </div>
+        </div>
+
+        <!-- Dias do mês -->
+        <div id="dias-mes-section" class="hidden">
+            <label class="dt-label">Dias do mês</label>
+            <div class="flex flex-wrap gap-1">
+                <?php for($i=1;$i<=31;$i++): ?>
+                <button onclick="toggleDia(<?= $i ?>)" id="dia-<?= $i ?>"
+                    class="dia-btn w-8 h-8 rounded-lg border border-dt-border text-[10px] font-semibold text-dt-muted bg-dt-base cursor-pointer transition-colors hover:border-dt-muted">
+                    <?= $i ?>
+                </button>
+                <?php endfor; ?>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+            <div>
+                <label class="dt-label">Prioridade</label>
+                <select id="r-prioridade" class="dt-select sel">
+                    <option value="baixa">🟢 Baixa</option>
+                    <option value="media" selected>🟡 Média</option>
+                    <option value="alta">🟠 Alta</option>
+                    <option value="urgente">🔴 Urgente</option>
+                </select>
+            </div>
+            <div>
+                <label class="dt-label">Cor no calendário</label>
+                <input id="r-cor" type="color" value="#58a6ff" class="dt-color-pick w-full h-9">
+            </div>
+        </div>
+        <div>
+            <label class="dt-label">Projeto</label>
+            <select id="r-projeto" class="dt-select sel"><option value="">— Sem projeto —</option></select>
+        </div>
+        <div>
+            <label class="dt-label">Descrição</label>
+            <textarea id="r-descricao" rows="2" class="dt-input resize-y" placeholder="Detalhes opcionais..."></textarea>
+        </div>
+
+        <!-- Toggle ativo -->
+        <div id="r-ativo-section" class="hidden flex items-center gap-2 pt-1">
+            <label class="text-xs text-dt-muted flex-1">Recorrência ativa</label>
+            <button id="r-ativo-btn" onclick="toggleAtivo()" class="relative w-10 h-5 rounded-full border border-dt-border bg-dt-base cursor-pointer transition-colors">
+                <span id="r-ativo-dot" class="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-dt-muted transition-all"></span>
+            </button>
+        </div>
+    </div>
+    <div class="flex justify-end gap-2 px-4 py-2.5 border-t border-dt-border bg-dt-base/30 flex-shrink-0">
+        <button onclick="fecharModalRec()" class="dt-btn-ghost dt-btn-ghost-sm">Cancelar</button>
+        <button onclick="salvarRecorrencia()" class="dt-btn dt-btn-sm">Salvar</button>
     </div>
 </div>
 </div>
@@ -153,62 +268,67 @@ async function req(action,body=null,extra={}){
     if(body){opts.method='POST';opts.body=JSON.stringify(body)}
     const r=await fetch('api.php?'+qs,opts);return r.json()
 }
-function fmtDateBR(s){
-    if(!s)return''
-    const [y,m,d]=s.split('-')
-    return `${d}/${m}`
-}
-function fmtDateFull(s){
-    if(!s)return''
-    const [y,m,d]=s.split('-')
-    return `${d}/${m}/${y}`
-}
 
-const PRIORIDADES={baixa:{label:'Baixa',color:'#3fb950'},media:{label:'Média',color:'#d29922'},alta:{label:'Alta',color:'#f0883e'},urgente:{label:'Urgente',color:'#f85149'}}
+const PRI={baixa:{label:'Baixa',color:'#3fb950'},media:{label:'Média',color:'#d29922'},alta:{label:'Alta',color:'#f0883e'},urgente:{label:'Urgente',color:'#f85149'}}
 const COL_LABELS={backlog:'Backlog',andamento:'Em Andamento',aguardando:'Aguardando Retorno',revisao:'Em Revisão',concluido:'Concluído',bloqueado:'Bloqueado'}
+const DIAS_SEMANA=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb']
 
 /* ── State ── */
-let hoje = new Date()
-let viewDate = new Date(hoje.getFullYear(), hoje.getMonth(), 1)
-let allCards = []
-let projetos = []
-let editingId = null
-let agendaView = 'mes'
+let hoje=new Date()
+let viewDate=new Date(hoje.getFullYear(),hoje.getMonth(),1)
+let allCards=[], projetos=[], recorrencias=[]
+let editingId=null, editingRecId=null
+let currentView='mes'
+let tipoRec='semanal', diasSelecionados=new Set(), ativoRec=true
 
 /* ── Init ── */
 ;(async()=>{
-    projetos = await req('projetos')
-    buildProjetoSelect()
-    await carregarCards()
+    projetos=await req('projetos')
+    buildProjetoSelects()
+    await Promise.all([carregarCards(), carregarRecorrencias()])
     render()
 })()
 
 async function carregarCards(){
-    // Busca cards do mês atual e adjacentes (janela de 3 meses)
-    const de  = new Date(viewDate.getFullYear(), viewDate.getMonth()-1, 1).toISOString().slice(0,10)
-    const ate = new Date(viewDate.getFullYear(), viewDate.getMonth()+2, 0).toISOString().slice(0,10)
-    allCards = await req('listar', null, {limit:500})
+    allCards=await req('listar',null,{limit:500})
+}
+async function carregarRecorrencias(){
+    recorrencias=await req('recorrencias')
+    renderSidebar()
 }
 
-function render(){
-    const m = viewDate.getMonth(), y = viewDate.getFullYear()
-    const meses=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
-    document.getElementById('mes-label').textContent = `${meses[m]} ${y}`
+/* ── EXPANSÃO DE RECORRÊNCIAS ── */
+function recorrenciasParaDia(dateStr){
+    const d=new Date(dateStr+'T00:00:00')
+    const diaSemana=d.getDay()         // 0-6
+    const diaMes=d.getDate()           // 1-31
 
-    if(agendaView==='mes') renderMes()
-    else renderSemana()
+    return recorrencias.filter(r=>{
+        if(!r.ativo) return false
+        const dias=JSON.parse(r.dias||'[]')
+        if(r.tipo==='diario') return true
+        if(r.tipo==='semanal') return dias.includes(diaSemana)
+        if(r.tipo==='mensal')  return dias.includes(diaMes)
+        return false
+    })
+}
+
+/* ── RENDER PRINCIPAL ── */
+function render(){
+    const m=viewDate.getMonth(), y=viewDate.getFullYear()
+    const meses=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
+    document.getElementById('mes-label').textContent=`${meses[m]} ${y}`
+    currentView==='mes' ? renderMes() : renderSemana()
     renderSemData()
 }
 
-/* ── VISÃO MÊS ── */
 function renderMes(){
-    const y=viewDate.getFullYear(), m=viewDate.getMonth()
+    const y=viewDate.getFullYear(),m=viewDate.getMonth()
     const primeiro=new Date(y,m,1).getDay()
     const ultimoDia=new Date(y,m+1,0).getDate()
-    const hojeStr=`${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,'0')}-${String(hoje.getDate()).padStart(2,'0')}`
-
+    const hojeStr=toDateStr(hoje)
     let html=''
-    // Células vazias antes do primeiro dia
+
     for(let i=0;i<primeiro;i++)
         html+=`<div class="bg-dt-base/40 min-h-[110px] p-1.5"></div>`
 
@@ -221,32 +341,40 @@ function renderMes(){
             if(!c.data_inicio) return false
             const ini=c.data_inicio.slice(0,10)
             const fim=c.data_fim?c.data_fim.slice(0,10):ini
-            return dateStr>=ini && dateStr<=fim
+            return dateStr>=ini&&dateStr<=fim
         })
+        const dayRec=recorrenciasParaDia(dateStr)
+        const todos=[...dayCards.map(c=>({...c,_rec:false})), ...dayRec.map(r=>({...r,_rec:true,_titulo:r.titulo}))]
 
-        const pills=dayCards.slice(0,3).map(c=>{
-            const pri=PRIORIDADES[c.prioridade]||PRIORIDADES.media
-            return `<button onclick="abrirModalEditar(${c.id})"
-                class="w-full text-left text-[10px] px-1.5 py-0.5 rounded-md truncate cursor-pointer border-0 transition-colors hover:opacity-80"
+        const pills=todos.slice(0,4).map(item=>{
+            if(item._rec){
+                const cor=item.cor||'#58a6ff'
+                return `<div class="w-full text-[10px] px-1.5 py-0.5 rounded-md truncate flex items-center gap-1"
+                    style="background:${cor}22;color:${cor};border-left:2px solid ${cor}"
+                    title="${esc(item.titulo)} (recorrente)">
+                    <span class="opacity-60 text-[8px]">🔁</span>${esc(item.titulo)}</div>`
+            }
+            const pri=PRI[item.prioridade]||PRI.media
+            return `<button onclick="abrirModalEditar(${item.id})"
+                class="w-full text-left text-[10px] px-1.5 py-0.5 rounded-md truncate cursor-pointer border-0 hover:opacity-80 transition-colors"
                 style="background:${pri.color}22;color:${pri.color};border-left:2px solid ${pri.color}"
-                title="${esc(c.titulo)}">${esc(c.titulo)}</button>`
+                title="${esc(item.titulo)}">${esc(item.titulo)}</button>`
         }).join('')
 
-        const extra=dayCards.length>3?`<span class="text-[9px] text-dt-muted/60 pl-1">+${dayCards.length-3} mais</span>`:''
+        const extra=todos.length>4?`<span class="text-[9px] text-dt-muted/60 pl-1">+${todos.length-4}</span>`:''
 
         html+=`<div onclick="abrirModalNovoDia('${dateStr}')"
-            class="bg-dt-surface min-h-[110px] p-1.5 cursor-pointer transition-colors hover:bg-dt-card group ${isPassado?'opacity-60':''}"
+            class="bg-dt-surface min-h-[110px] p-1.5 cursor-pointer hover:bg-dt-card transition-colors group ${isPassado?'opacity-55':''}"
             data-date="${dateStr}">
             <div class="flex items-center justify-between mb-1">
                 <span class="text-xs font-semibold w-6 h-6 flex items-center justify-center rounded-full
                     ${isHoje?'bg-dt-accent text-dt-base':'text-dt-muted group-hover:text-dt-text'}">${d}</span>
-                ${dayCards.length>0?`<span class="text-[9px] text-dt-muted/50 tabular-nums">${dayCards.length}</span>`:''}
+                ${todos.length>0?`<span class="text-[9px] text-dt-muted/50">${todos.length}</span>`:''}
             </div>
             <div class="flex flex-col gap-0.5" onclick="event.stopPropagation()">${pills}${extra}</div>
         </div>`
     }
 
-    // Preenche restante da grade
     const total=primeiro+ultimoDia
     const resto=(7-total%7)%7
     for(let i=0;i<resto;i++)
@@ -255,82 +383,126 @@ function renderMes(){
     document.getElementById('cal-grid').innerHTML=html
 }
 
-/* ── VISÃO SEMANA ── */
 function renderSemana(){
-    const y=viewDate.getFullYear(), m=viewDate.getMonth()
-    // Semana atual baseada em viewDate
     const base=new Date(viewDate)
-    const diaSemana=base.getDay()
-    const inicioSemana=new Date(base); inicioSemana.setDate(base.getDate()-diaSemana)
-    const diasSemana=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb']
-    const hojeStr=hoje.toISOString().slice(0,10)
-
+    const ds=base.getDay()
+    const ini=new Date(base); ini.setDate(base.getDate()-ds)
+    const hojeStr=toDateStr(hoje)
     let html=`<div class="grid grid-cols-7 gap-1">`
+
     for(let i=0;i<7;i++){
-        const dia=new Date(inicioSemana); dia.setDate(inicioSemana.getDate()+i)
-        const dateStr=dia.toISOString().slice(0,10)
+        const dia=new Date(ini); dia.setDate(ini.getDate()+i)
+        const dateStr=toDateStr(dia)
         const isHoje=dateStr===hojeStr
 
         const dayCards=allCards.filter(c=>{
             if(!c.data_inicio) return false
-            const ini=c.data_inicio.slice(0,10)
-            const fim=c.data_fim?c.data_fim.slice(0,10):ini
-            return dateStr>=ini && dateStr<=fim
+            const ini2=c.data_inicio.slice(0,10)
+            const fim=c.data_fim?c.data_fim.slice(0,10):ini2
+            return dateStr>=ini2&&dateStr<=fim
         })
+        const dayRec=recorrenciasParaDia(dateStr)
 
-        const pills=dayCards.map(c=>{
-            const pri=PRIORIDADES[c.prioridade]||PRIORIDADES.media
-            const col=COL_LABELS[c.coluna]||c.coluna
+        const cardPills=dayCards.map(c=>{
+            const pri=PRI[c.prioridade]||PRI.media
             return `<button onclick="abrirModalEditar(${c.id})"
                 class="w-full text-left text-[10px] px-2 py-1 rounded-md cursor-pointer border-0 hover:opacity-80 transition-colors"
                 style="background:${pri.color}22;color:${pri.color};border-left:2px solid ${pri.color}">
                 <div class="font-medium truncate">${esc(c.titulo)}</div>
-                <div class="opacity-60">${col}</div>
+                <div class="opacity-60">${COL_LABELS[c.coluna]||c.coluna}</div>
             </button>`
+        }).join('')
+
+        const recPills=dayRec.map(r=>{
+            const cor=r.cor||'#58a6ff'
+            return `<div class="w-full text-[10px] px-2 py-1 rounded-md flex gap-1 items-start"
+                style="background:${cor}22;color:${cor};border-left:2px solid ${cor}">
+                <span class="opacity-60 mt-0.5">🔁</span>
+                <div>
+                    <div class="font-medium">${esc(r.titulo)}</div>
+                    <div class="opacity-60">${descRecorrencia(r)}</div>
+                </div>
+            </div>`
         }).join('')
 
         html+=`<div class="flex flex-col gap-1 min-h-[200px]">
             <div onclick="abrirModalNovoDia('${dateStr}')" class="flex flex-col items-center py-2 cursor-pointer hover:bg-dt-card rounded-lg transition-colors">
-                <span class="text-[10px] text-dt-muted uppercase font-semibold">${diasSemana[i]}</span>
+                <span class="text-[10px] text-dt-muted uppercase font-semibold">${DIAS_SEMANA[i]}</span>
                 <span class="text-sm font-bold w-8 h-8 flex items-center justify-center rounded-full mt-0.5
                     ${isHoje?'bg-dt-accent text-dt-base':'text-dt-text'}">${dia.getDate()}</span>
             </div>
-            <div class="flex flex-col gap-1 px-1">${pills}</div>
+            <div class="flex flex-col gap-1 px-1">${cardPills}${recPills}</div>
         </div>`
     }
     html+=`</div>`
     document.getElementById('semana-grid').innerHTML=html
 }
 
-/* ── SEM DATA ── */
 function renderSemData(){
-    const semData=allCards.filter(c=>!c.data_inicio && c.coluna!=='concluido')
+    const semData=allCards.filter(c=>!c.data_inicio&&c.coluna!=='concluido')
     document.getElementById('sem-data-count').textContent=semData.length
     const el=document.getElementById('sem-data-list')
-    if(!semData.length){
-        el.innerHTML='<p class="text-xs text-dt-muted/50 px-4 py-3">Todas as tarefas têm data agendada.</p>'
-        return
-    }
+    if(!semData.length){ el.innerHTML='<p class="text-xs text-dt-muted/50 px-4 py-3">Nenhuma.</p>'; return }
     el.innerHTML=semData.map(c=>{
-        const pri=PRIORIDADES[c.prioridade]||PRIORIDADES.media
+        const pri=PRI[c.prioridade]||PRI.media
         return `<button onclick="abrirModalEditar(${c.id})"
-            class="w-full text-left flex items-center gap-3 px-4 py-2.5 hover:bg-dt-card transition-colors border-0 bg-transparent cursor-pointer">
+            class="w-full text-left flex items-center gap-3 px-4 py-2 hover:bg-dt-card transition-colors border-0 bg-transparent cursor-pointer">
             <span class="w-1.5 h-1.5 rounded-full flex-shrink-0" style="background:${pri.color}"></span>
-            <span class="text-xs text-dt-text flex-1 truncate">${esc(c.titulo)}</span>
-            <span class="text-[10px] text-dt-muted/50 whitespace-nowrap">${COL_LABELS[c.coluna]||c.coluna}</span>
-            <span class="text-[10px] px-1.5 py-0.5 rounded-md" style="background:${pri.color}22;color:${pri.color}">${pri.label}</span>
+            <span class="text-xs flex-1 truncate">${esc(c.titulo)}</span>
+            <span class="text-[10px] text-dt-muted/50">${COL_LABELS[c.coluna]||c.coluna}</span>
         </button>`
     }).join('')
 }
 
+/* ── SIDEBAR RECORRÊNCIAS ── */
+function renderSidebar(){
+    document.getElementById('rec-count').textContent=recorrencias.length
+    const el=document.getElementById('rec-list')
+    if(!recorrencias.length){
+        el.innerHTML='<p class="text-xs text-dt-muted/50 px-3 py-3">Nenhuma tarefa recorrente.</p>'
+        return
+    }
+    el.innerHTML=recorrencias.map(r=>{
+        const cor=r.cor||'#58a6ff'
+        const pri=PRI[r.prioridade]||PRI.media
+        return `<div class="flex items-start gap-2 px-3 py-2.5 hover:bg-dt-card transition-colors group/rec">
+            <span class="w-2 h-2 rounded-full flex-shrink-0 mt-1" style="background:${cor}"></span>
+            <div class="flex-1 min-w-0">
+                <p class="text-xs font-medium truncate ${r.ativo?'text-dt-text':'text-dt-muted line-through'}">${esc(r.titulo)}</p>
+                <p class="text-[10px] text-dt-muted/70 mt-0.5">${descRecorrencia(r)}</p>
+                ${r.projeto_nome?`<p class="text-[10px] text-dt-muted/50 truncate">${esc(r.projeto_nome)}</p>`:''}
+            </div>
+            <div class="flex gap-1 opacity-0 group-hover/rec:opacity-100 transition-opacity">
+                <button onclick="abrirModalRecorrenciaEditar(${r.id})" class="text-dt-muted hover:text-dt-text text-xs p-0.5 bg-transparent border-0 cursor-pointer">✏</button>
+            </div>
+        </div>`
+    }).join('')
+
+    // hover manual (group-hover não funciona em JS no Tailwind CDN)
+    el.querySelectorAll('[class*="group/rec"]').forEach(row=>{
+        const btns=row.querySelector('.flex.gap-1')
+        if(!btns) return
+        row.addEventListener('mouseenter',()=>btns.style.opacity='1')
+        row.addEventListener('mouseleave',()=>btns.style.opacity='0')
+    })
+}
+
+function descRecorrencia(r){
+    const dias=JSON.parse(r.dias||'[]')
+    if(r.tipo==='diario') return 'Todo dia'
+    if(r.tipo==='semanal') return 'Toda '+dias.map(d=>DIAS_SEMANA[d]).join(', ')
+    if(r.tipo==='mensal')  return 'Dia '+dias.join(', ')+' do mês'
+    return ''
+}
+
 /* ── NAVEGAÇÃO ── */
 document.getElementById('btn-prev').addEventListener('click',()=>{
-    if(agendaView==='mes') viewDate.setMonth(viewDate.getMonth()-1)
+    if(currentView==='mes') viewDate.setMonth(viewDate.getMonth()-1)
     else viewDate.setDate(viewDate.getDate()-7)
     carregarCards().then(render)
 })
 document.getElementById('btn-next').addEventListener('click',()=>{
-    if(agendaView==='mes') viewDate.setMonth(viewDate.getMonth()+1)
+    if(currentView==='mes') viewDate.setMonth(viewDate.getMonth()+1)
     else viewDate.setDate(viewDate.getDate()+7)
     carregarCards().then(render)
 })
@@ -338,45 +510,37 @@ document.getElementById('btn-hoje').addEventListener('click',()=>{
     viewDate=new Date(hoje.getFullYear(),hoje.getMonth(),1)
     carregarCards().then(render)
 })
-
-function setAgendaView(v){
-    agendaView=v
-    document.getElementById('view-mes').classList.toggle('hidden', v!=='mes')
-    document.getElementById('view-semana').classList.toggle('hidden', v!=='semana')
+function setView(v){
+    currentView=v
+    document.getElementById('view-mes').classList.toggle('hidden',v!=='mes')
+    document.getElementById('view-semana').classList.toggle('hidden',v!=='semana')
     document.getElementById('btn-view-mes').className=`px-3 py-1.5 font-medium cursor-pointer border-0 transition-colors ${v==='mes'?'bg-dt-card text-dt-accent':'bg-transparent text-dt-muted hover:text-dt-text'}`
     document.getElementById('btn-view-semana').className=`px-3 py-1.5 font-medium cursor-pointer border-0 transition-colors ${v==='semana'?'bg-dt-card text-dt-accent':'bg-transparent text-dt-muted hover:text-dt-text'}`
     render()
 }
 
-/* ── MODAL ── */
+/* ── MODAL ATIVIDADE ── */
 const backdrop=document.getElementById('modal-backdrop')
 
 function abrirModalNovo(){
     editingId=null
-    document.getElementById('modal-title-text').textContent='Nova Atividade'
+    document.getElementById('modal-title').textContent='Nova Atividade'
     document.getElementById('btn-delete-card').style.display='none'
-    document.getElementById('modal-link-board').classList.add('hidden')
-    document.getElementById('modal-hint').classList.remove('hidden')
-    limparModal()
-    backdrop.classList.remove('hidden'); backdrop.classList.add('flex')
+    document.getElementById('link-board').classList.add('hidden')
+    limparModal(); abrirBackdrop(backdrop)
     setTimeout(()=>document.getElementById('f-titulo').focus(),50)
 }
-
 function abrirModalNovoDia(dateStr){
     abrirModalNovo()
     document.getElementById('f-data-inicio').value=dateStr
     document.getElementById('f-data-fim').value=dateStr
 }
-
 function abrirModalEditar(id){
-    const card=allCards.find(c=>c.id===id)
-    if(!card)return
+    const card=allCards.find(c=>c.id===id); if(!card) return
     editingId=id
-    document.getElementById('modal-title-text').textContent='Editar Atividade'
+    document.getElementById('modal-title').textContent='Editar Atividade'
     document.getElementById('btn-delete-card').style.display='inline-flex'
-    const linkBoard=document.getElementById('modal-link-board')
-    linkBoard.classList.remove('hidden')
-    document.getElementById('modal-hint').classList.add('hidden')
+    document.getElementById('link-board').classList.remove('hidden')
     document.getElementById('f-titulo').value=card.titulo||''
     document.getElementById('f-descricao').value=card.descricao||''
     document.getElementById('f-prioridade').value=card.prioridade||'media'
@@ -384,59 +548,169 @@ function abrirModalEditar(id){
     document.getElementById('f-projeto').value=card.projeto_id||''
     document.getElementById('f-data-inicio').value=card.data_inicio?card.data_inicio.slice(0,10):''
     document.getElementById('f-data-fim').value=card.data_fim?card.data_fim.slice(0,10):''
-    backdrop.classList.remove('hidden'); backdrop.classList.add('flex')
+    abrirBackdrop(backdrop)
     setTimeout(()=>document.getElementById('f-titulo').focus(),50)
 }
-
-function fecharModal(){
-    backdrop.classList.add('hidden'); backdrop.classList.remove('flex')
-    editingId=null
-}
-
+function fecharModal(){ fecharBackdrop(backdrop); editingId=null }
 function limparModal(){
-    ['f-titulo','f-descricao','f-data-inicio','f-data-fim'].forEach(id=>{document.getElementById(id).value=''})
+    ['f-titulo','f-descricao','f-data-inicio','f-data-fim'].forEach(id=>document.getElementById(id).value='')
     document.getElementById('f-prioridade').value='media'
     document.getElementById('f-coluna').value='backlog'
     document.getElementById('f-projeto').value=''
 }
-
 async function salvarCard(){
     const titulo=document.getElementById('f-titulo').value.trim()
     if(!titulo){document.getElementById('f-titulo').focus();return}
     const payload={
-        titulo,
-        descricao:   document.getElementById('f-descricao').value,
-        prioridade:  document.getElementById('f-prioridade').value,
-        coluna:      document.getElementById('f-coluna').value,
-        projeto_id:  document.getElementById('f-projeto').value||null,
-        data_inicio: document.getElementById('f-data-inicio').value||null,
-        data_fim:    document.getElementById('f-data-fim').value||null,
-        tipo:'Outro', tags:'', solucao:'', link:'', tempo_gasto:0, solicitado_por:'',
+        titulo, descricao:document.getElementById('f-descricao').value,
+        prioridade:document.getElementById('f-prioridade').value,
+        coluna:document.getElementById('f-coluna').value,
+        projeto_id:document.getElementById('f-projeto').value||null,
+        data_inicio:document.getElementById('f-data-inicio').value||null,
+        data_fim:document.getElementById('f-data-fim').value||null,
+        tipo:'Outro',tags:'',solucao:'',link:'',tempo_gasto:0,solicitado_por:'',
     }
-    if(editingId){ payload.id=editingId; await req('atualizar',payload); toast('Atualizada','ok') }
-    else { await req('criar',payload); toast('Criada','ok') }
-    fecharModal()
-    await carregarCards(); render()
+    if(editingId){payload.id=editingId;await req('atualizar',payload);toast('Atualizada','ok')}
+    else{await req('criar',payload);toast('Criada','ok')}
+    fecharModal(); await carregarCards(); render()
 }
-
 async function deletarCard(){
     if(!editingId||!confirm('Mover para a lixeira?'))return
     await req('deletar',{id:editingId}); toast('Excluída','ok')
     fecharModal(); await carregarCards(); render()
 }
 
-/* ── PROJETO SELECT ── */
-function buildProjetoSelect(){
-    const opts=projetos.map(p=>`<option value="${p.id}">${esc(p.nome)}</option>`).join('')
-    document.getElementById('f-projeto').innerHTML='<option value="">— Sem projeto —</option>'+opts
+/* ── MODAL RECORRÊNCIA ── */
+const recBackdrop=document.getElementById('modal-rec-backdrop')
+
+function abrirModalRecorrencia(){
+    editingRecId=null
+    document.getElementById('rec-modal-title').textContent='🔁 Nova Tarefa Recorrente'
+    document.getElementById('btn-delete-rec').style.display='none'
+    document.getElementById('r-ativo-section').classList.add('hidden')
+    limparModalRec()
+    abrirBackdrop(recBackdrop)
+    setTimeout(()=>document.getElementById('r-titulo').focus(),50)
 }
+function abrirModalRecorrenciaEditar(id){
+    const r=recorrencias.find(x=>x.id===id); if(!r) return
+    editingRecId=id
+    document.getElementById('rec-modal-title').textContent='🔁 Editar Recorrência'
+    document.getElementById('btn-delete-rec').style.display='inline-flex'
+    document.getElementById('r-ativo-section').classList.remove('hidden')
+    document.getElementById('r-titulo').value=r.titulo||''
+    document.getElementById('r-descricao').value=r.descricao||''
+    document.getElementById('r-prioridade').value=r.prioridade||'media'
+    document.getElementById('r-cor').value=r.cor||'#58a6ff'
+    document.getElementById('r-projeto').value=r.projeto_id||''
+    ativoRec=!!r.ativo; atualizarToggleAtivo()
+    // tipo e dias
+    diasSelecionados=new Set(JSON.parse(r.dias||'[]'))
+    setTipoRec(r.tipo||'semanal')
+    abrirBackdrop(recBackdrop)
+    setTimeout(()=>document.getElementById('r-titulo').focus(),50)
+}
+function fecharModalRec(){ fecharBackdrop(recBackdrop); editingRecId=null }
+function limparModalRec(){
+    ['r-titulo','r-descricao'].forEach(id=>document.getElementById(id).value='')
+    document.getElementById('r-prioridade').value='media'
+    document.getElementById('r-cor').value='#58a6ff'
+    document.getElementById('r-projeto').value=''
+    diasSelecionados=new Set(); ativoRec=true
+    setTipoRec('semanal')
+}
+
+function setTipoRec(tipo){
+    tipoRec=tipo
+    document.getElementById('dias-semana-section').classList.toggle('hidden', tipo!=='semanal')
+    document.getElementById('dias-mes-section').classList.toggle('hidden', tipo!=='mensal')
+    document.querySelectorAll('.rec-tipo-btn').forEach(b=>{
+        const active=b.id==='rt-'+tipo
+        b.className=`rec-tipo-btn flex-1 py-1.5 text-xs font-semibold rounded-lg border cursor-pointer transition-colors ${active?'border-dt-accent bg-dt-accent/10 text-dt-accent':'border-dt-border bg-dt-base text-dt-muted'}`
+    })
+    // Limpar seleção ao trocar tipo
+    diasSelecionados=new Set()
+    document.querySelectorAll('.dia-btn').forEach(b=>{
+        b.className=b.className.replace(/border-dt-accent bg-dt-accent\/10 text-dt-accent/g,'border-dt-border bg-dt-base text-dt-muted')
+    })
+}
+
+function toggleDia(n){
+    diasSelecionados.has(n)?diasSelecionados.delete(n):diasSelecionados.add(n)
+    const btn=document.getElementById('dia-'+n)
+    if(!btn) return
+    const sel=diasSelecionados.has(n)
+    btn.className=`dia-btn ${btn.className.includes('w-10')?'w-10 h-10':'w-8 h-8'} rounded-lg border text-xs font-semibold cursor-pointer transition-colors ${sel?'border-dt-accent bg-dt-accent/10 text-dt-accent':'border-dt-border bg-dt-base text-dt-muted'}`
+}
+
+function toggleAtivo(){
+    ativoRec=!ativoRec; atualizarToggleAtivo()
+}
+function atualizarToggleAtivo(){
+    const btn=document.getElementById('r-ativo-btn')
+    const dot=document.getElementById('r-ativo-dot')
+    btn.style.background=ativoRec?'#58a6ff33':'transparent'
+    btn.style.borderColor=ativoRec?'#58a6ff':'#30363d'
+    dot.style.background=ativoRec?'#58a6ff':'#8b949e'
+    dot.style.transform=ativoRec?'translateX(20px)':'translateX(0)'
+}
+
+async function salvarRecorrencia(){
+    const titulo=document.getElementById('r-titulo').value.trim()
+    if(!titulo){document.getElementById('r-titulo').focus();return}
+    if(tipoRec!=='diario'&&diasSelecionados.size===0){
+        toast('Selecione pelo menos um dia','err'); return
+    }
+    const payload={
+        titulo, descricao:document.getElementById('r-descricao').value,
+        tipo:tipoRec, dias:[...diasSelecionados],
+        prioridade:document.getElementById('r-prioridade').value,
+        cor:document.getElementById('r-cor').value,
+        projeto_id:document.getElementById('r-projeto').value||null,
+        ativo:ativoRec,
+    }
+    if(editingRecId){
+        payload.id=editingRecId
+        await req('atualizar_recorrencia',payload); toast('Recorrência atualizada','ok')
+    } else {
+        await req('criar_recorrencia',payload); toast('Recorrência criada','ok')
+    }
+    fecharModalRec(); await carregarRecorrencias(); render()
+}
+
+async function deletarRecorrencia(){
+    if(!editingRecId||!confirm('Excluir esta recorrência?'))return
+    await req('deletar_recorrencia',{id:editingRecId}); toast('Excluída','ok')
+    fecharModalRec(); await carregarRecorrencias(); render()
+}
+
+/* ── SELECTS ── */
+function buildProjetoSelects(){
+    const opts=projetos.map(p=>`<option value="${p.id}">${esc(p.nome)}</option>`).join('')
+    const base='<option value="">— Sem projeto —</option>'+opts
+    document.getElementById('f-projeto').innerHTML=base
+    document.getElementById('r-projeto').innerHTML=base
+}
+
+/* ── UTILS ── */
+function toDateStr(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}` }
+function abrirBackdrop(el){ el.classList.remove('hidden'); el.classList.add('flex') }
+function fecharBackdrop(el){ el.classList.add('hidden'); el.classList.remove('flex') }
 
 /* ── KEYBOARD ── */
 document.addEventListener('keydown',e=>{
-    if(e.key==='Escape'&&backdrop.classList.contains('flex')) fecharModal()
-    if(e.ctrlKey&&e.key==='Enter'&&backdrop.classList.contains('flex')){e.preventDefault();salvarCard()}
+    if(e.key==='Escape'){
+        if(backdrop.classList.contains('flex')) fecharModal()
+        if(recBackdrop.classList.contains('flex')) fecharModalRec()
+    }
+    if(e.ctrlKey&&e.key==='Enter'){
+        e.preventDefault()
+        if(backdrop.classList.contains('flex')) salvarCard()
+        if(recBackdrop.classList.contains('flex')) salvarRecorrencia()
+    }
 })
-backdrop.addEventListener('click',e=>{if(e.target===backdrop)fecharModal()})
+backdrop.addEventListener('click',e=>{ if(e.target===backdrop) fecharModal() })
+recBackdrop.addEventListener('click',e=>{ if(e.target===recBackdrop) fecharModalRec() })
 </script>
 </body>
 </html>
