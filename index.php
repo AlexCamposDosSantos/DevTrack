@@ -86,7 +86,8 @@ try { getDB(); } catch (Exception) { header('Location: install.php'); exit; }
 </div>
 
 <!-- ── BOARD ── -->
-<div id="board-view" class="flex gap-4 p-5 overflow-x-auto min-h-[calc(100vh-56px)] items-start">
+<div id="board-view" class="overflow-x-auto min-h-[calc(100vh-56px)]">
+<div class="flex gap-4 p-5 items-start w-max min-w-full">
     <?php
     $cols = [
         ['id'=>'backlog',   'label'=>'Backlog',      'color'=>'#8b949e'],
@@ -110,7 +111,7 @@ try { getDB(); } catch (Exception) { header('Location: install.php'); exit; }
         </div>
     </div>
     <?php endforeach; ?>
-</div>
+</div></div>
 
 <!-- ── TABLE VIEW ── -->
 <div id="table-view" style="display:none" class="p-5"></div>
