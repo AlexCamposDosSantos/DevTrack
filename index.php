@@ -86,8 +86,8 @@ try { getDB(); } catch (Exception) { header('Location: install.php'); exit; }
 </div>
 
 <!-- ── BOARD ── -->
-<div id="board-view" class="overflow-x-auto min-h-[calc(100vh-56px)]">
-<div class="flex gap-4 p-5 items-start w-max min-w-full">
+<div id="board-view" class="w-full overflow-x-auto min-h-[calc(100vh-56px)]">
+<div class="flex gap-4 p-5 items-start" style="width:max-content;min-width:100%">
     <?php
     $cols = [
         ['id'=>'backlog',   'label'=>'Backlog',      'color'=>'#8b949e'],
