@@ -98,7 +98,7 @@ try { getDB(); } catch (Exception) { header('Location: install.php'); exit; }
         ['id'=>'bloqueado', 'label'=>'Bloqueado',    'color'=>'#f85149'],
     ];
     foreach ($cols as $col): ?>
-    <div class="flex flex-col min-w-[280px] max-w-[280px] bg-dt-surface border border-dt-border rounded-xl max-h-[calc(100vh-90px)]">
+    <div class="flex flex-col min-w-[280px] max-w-[280px] bg-dt-surface border border-dt-border rounded-xl self-start">
         <div class="flex items-center gap-2 px-3 py-2.5 border-b border-dt-border flex-shrink-0 bg-dt-surface rounded-t-xl">
             <span class="w-2 h-2 rounded-full flex-shrink-0" style="background:<?= $col['color'] ?>"></span>
             <span class="font-semibold text-sm flex-1 tracking-tight"><?= $col['label'] ?></span>
@@ -107,7 +107,7 @@ try { getDB(); } catch (Exception) { header('Location: install.php'); exit; }
             <button onclick="openModal(null,'<?= $col['id'] ?>')"
                 class="w-6 h-6 flex items-center justify-center text-dt-muted hover:text-dt-text hover:bg-dt-border/60 rounded-md text-lg leading-none cursor-pointer bg-transparent border-0 transition-colors ml-0.5">+</button>
         </div>
-        <div class="cards-list flex-1 overflow-y-auto p-2 flex flex-col gap-1.5 min-h-[80px] rounded-b-xl" data-col="<?= $col['id'] ?>">
+        <div class="cards-list p-2 flex flex-col gap-1.5 min-h-[80px] rounded-b-xl" data-col="<?= $col['id'] ?>">
         </div>
     </div>
     <?php endforeach; ?>
