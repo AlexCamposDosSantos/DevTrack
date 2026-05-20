@@ -111,6 +111,7 @@ try { getDB(); } catch (Exception) { header('Location: install.php'); exit; }
         </div>
     </div>
     <?php endforeach; ?>
+    <div class="w-5 flex-shrink-0"></div>
 </div></div>
 
 <!-- ── TABLE VIEW ── -->
