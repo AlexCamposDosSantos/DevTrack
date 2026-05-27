@@ -121,28 +121,24 @@
 
 <!-- ── MODAL ATIVIDADE ── -->
 <div id="modal-backdrop" class="fixed inset-0 z-[100] hidden items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-<div class="bg-dt-surface border border-dt-border/80 rounded-2xl w-full max-w-lg flex flex-col overflow-hidden shadow-modal">
-    <div class="flex items-center gap-3 px-4 py-3 border-b border-dt-border">
+<div class="bg-dt-surface border border-dt-border/80 rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden shadow-modal">
+    <div class="flex items-center gap-3 px-4 py-3 border-b border-dt-border flex-shrink-0">
         <span id="modal-title" class="font-semibold text-sm flex-1">Nova Atividade</span>
         <button id="btn-delete-card" onclick="deletarCard()" style="display:none" class="dt-btn-danger">🗑 Excluir</button>
         <button onclick="fecharModal()" class="w-6 h-6 flex items-center justify-center text-dt-muted hover:text-dt-text hover:bg-dt-border/60 rounded-lg cursor-pointer bg-transparent border-0 text-sm">✕</button>
     </div>
-    <div class="overflow-y-auto px-4 py-4 flex flex-col gap-3">
+    <div class="overflow-y-auto flex-1 px-4 py-4 flex flex-col gap-2">
+
         <div>
             <label class="dt-label">Título *</label>
             <input id="f-titulo" type="text" class="dt-input" placeholder="O que precisa ser feito?">
         </div>
-        <div class="grid grid-cols-2 gap-3">
+
+        <div class="grid grid-cols-3 gap-x-3 gap-y-2">
             <div>
-                <label class="dt-label">Data início</label>
-                <input id="f-data-inicio" type="date" class="dt-input">
+                <label class="dt-label">Tipo</label>
+                <select id="f-tipo" class="dt-select sel"></select>
             </div>
-            <div>
-                <label class="dt-label">Data fim</label>
-                <input id="f-data-fim" type="date" class="dt-input">
-            </div>
-        </div>
-        <div class="grid grid-cols-2 gap-3">
             <div>
                 <label class="dt-label">Prioridade</label>
                 <select id="f-prioridade" class="dt-select sel">
@@ -164,18 +160,56 @@
                 </select>
             </div>
         </div>
-        <div>
-            <label class="dt-label">Projeto</label>
-            <select id="f-projeto" class="dt-select sel"><option value="">— Sem projeto —</option></select>
+
+        <div class="grid grid-cols-2 gap-x-3 gap-y-2">
+            <div>
+                <label class="dt-label">Projeto</label>
+                <select id="f-projeto" class="dt-select sel"><option value="">— Sem projeto —</option></select>
+            </div>
+            <div>
+                <label class="dt-label">Solicitado por</label>
+                <input id="f-solicitado-por" type="text" class="dt-input" placeholder="Nome de quem pediu">
+            </div>
         </div>
+
         <div>
             <label class="dt-label">Descrição</label>
-            <textarea id="f-descricao" rows="2" class="dt-input resize-y" placeholder="Detalhes..."></textarea>
+            <textarea id="f-descricao" rows="2" class="dt-input resize-y" placeholder="Contexto e o que foi solicitado..."></textarea>
         </div>
+
+        <div>
+            <label class="dt-label">Solução / O que foi feito</label>
+            <textarea id="f-solucao" rows="3" class="dt-input resize-y" placeholder="Descreva a solução técnica aplicada..."></textarea>
+        </div>
+
+        <div class="grid grid-cols-3 gap-x-3 gap-y-2">
+            <div>
+                <label class="dt-label">Data início</label>
+                <input id="f-data-inicio" type="date" class="dt-input">
+            </div>
+            <div>
+                <label class="dt-label">Data fim</label>
+                <input id="f-data-fim" type="date" class="dt-input">
+            </div>
+            <div>
+                <label class="dt-label">Tempo gasto</label>
+                <input id="f-tempo" type="text" class="dt-input" placeholder="2h30m ou 45m">
+            </div>
+        </div>
+
+        <div>
+            <label class="dt-label flex items-center gap-1.5">🔔 Alarme <span class="text-[10px] text-dt-muted/60 font-normal">(notificação no browser)</span></label>
+            <div class="flex gap-2 items-center">
+                <input id="f-alarme" type="datetime-local" class="dt-input flex-1">
+                <button type="button" id="btn-alarme-limpar" onclick="document.getElementById('f-alarme').value='';this.style.display='none'" style="display:none"
+                    class="dt-btn-ghost-sm text-dt-red border-dt-red/30 hover:bg-dt-red/10 whitespace-nowrap">✕ Limpar</button>
+            </div>
+        </div>
+
     </div>
-    <div class="flex items-center justify-between px-4 py-2.5 border-t border-dt-border bg-dt-base/30 flex-shrink-0">
+    <div class="flex items-center justify-between px-4 py-2.5 border-t border-dt-border flex-shrink-0 bg-dt-base/30">
         <a id="link-board" href="index.php" class="text-xs text-dt-muted/60 hover:text-dt-accent no-underline hidden">Ver no board →</a>
-        <span class="flex-1"></span>
+        <span class="text-xs text-dt-muted/50">Ctrl+Enter salvar · Esc fechar</span>
         <div class="flex gap-2">
             <button onclick="fecharModal()" class="dt-btn-ghost dt-btn-ghost-sm">Cancelar</button>
             <button onclick="salvarCard()" class="dt-btn dt-btn-sm">Salvar</button>
@@ -455,15 +489,19 @@ const DIAS_SEMANA=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb']
 /* ── State ── */
 let hoje=new Date()
 let viewDate=new Date(hoje.getFullYear(),hoje.getMonth(),1)
-let allCards=[], projetos=[], recorrencias=[]
+let allCards=[], projetos=[], recorrencias=[], tipos=[]
 let editingId=null, editingRecId=null
 let currentView='mes'
 let tipoRec='semanal', diasSelecionados=new Set(), ativoRec=true
 
 /* ── Init ── */
 ;(async()=>{
-    projetos=await req('projetos')
+    await Promise.all([
+        req('projetos').then(d=>{ projetos=d }),
+        req('tipos').then(d=>{ tipos=d }),
+    ])
     buildProjetoSelects()
+    buildTipoSelect()
     await Promise.all([carregarCards(), carregarRecorrencias()])
     buildExecLookup()
     render()
@@ -770,32 +808,66 @@ function abrirModalEditar(id){
     document.getElementById('link-board').classList.remove('hidden')
     document.getElementById('f-titulo').value=card.titulo||''
     document.getElementById('f-descricao').value=card.descricao||''
+    document.getElementById('f-solucao').value=card.solucao||''
     document.getElementById('f-prioridade').value=card.prioridade||'media'
     document.getElementById('f-coluna').value=card.coluna||'backlog'
     document.getElementById('f-projeto').value=card.projeto_id||''
+    document.getElementById('f-solicitado-por').value=card.solicitado_por||''
     document.getElementById('f-data-inicio').value=card.data_inicio?card.data_inicio.slice(0,10):''
     document.getElementById('f-data-fim').value=card.data_fim?card.data_fim.slice(0,10):''
+    document.getElementById('f-tempo').value=card.tempo_gasto>0?fmtTempo(card.tempo_gasto):''
+    document.getElementById('f-tipo').value=card.tipo||(tipos[0]?.nome||'Outro')
+    const alarmeEl=document.getElementById('f-alarme')
+    alarmeEl.value=card.alarme_em?card.alarme_em.replace(' ','T').slice(0,16):''
+    document.getElementById('btn-alarme-limpar').style.display=card.alarme_em?'':'none'
     abrirBackdrop(backdrop)
     setTimeout(()=>document.getElementById('f-titulo').focus(),50)
 }
 function fecharModal(){ fecharBackdrop(backdrop); editingId=null }
 function limparModal(){
-    ['f-titulo','f-descricao','f-data-inicio','f-data-fim'].forEach(id=>document.getElementById(id).value='')
+    ['f-titulo','f-descricao','f-solucao','f-solicitado-por','f-data-inicio','f-data-fim','f-tempo','f-alarme']
+        .forEach(id=>{ const el=document.getElementById(id); if(el) el.value='' })
     document.getElementById('f-prioridade').value='media'
     document.getElementById('f-coluna').value='backlog'
     document.getElementById('f-projeto').value=''
+    document.getElementById('f-tipo').value=tipos[0]?.nome||'Outro'
+    document.getElementById('btn-alarme-limpar').style.display='none'
+    document.getElementById('link-board').classList.add('hidden')
+    document.getElementById('btn-delete-card').style.display='none'
 }
+function fmtTempo(min){ if(!min) return ''; const h=Math.floor(min/60),m=min%60; return h>0?`${h}h${m>0?m+'m':''}`:m+'m' }
+function parseTempo(s){
+    if(!s) return 0; s=s.toLowerCase().trim()
+    const hM=s.match(/(\d+)\s*h/),mM=s.match(/(\d+)\s*m/); let t=0
+    if(hM) t+=parseInt(hM[1])*60; if(mM) t+=parseInt(mM[1])
+    if(!hM&&!mM){ const n=parseInt(s); if(!isNaN(n)) t=n }
+    return t
+}
+function buildTipoSelect(){
+    const opts=tipos.map(t=>`<option value="${esc(t.nome)}">${esc(t.nome)}</option>`).join('')
+    document.getElementById('f-tipo').innerHTML=opts||'<option value="Outro">Outro</option>'
+}
+document.addEventListener('change',e=>{
+    if(e.target.id==='f-alarme')
+        document.getElementById('btn-alarme-limpar').style.display=e.target.value?'':'none'
+})
 async function salvarCard(){
     const titulo=document.getElementById('f-titulo').value.trim()
     if(!titulo){document.getElementById('f-titulo').focus();return}
     const payload={
-        titulo, descricao:document.getElementById('f-descricao').value,
-        prioridade:document.getElementById('f-prioridade').value,
-        coluna:document.getElementById('f-coluna').value,
-        projeto_id:document.getElementById('f-projeto').value||null,
+        titulo,
+        descricao:  document.getElementById('f-descricao').value,
+        solucao:    document.getElementById('f-solucao').value,
+        tipo:       document.getElementById('f-tipo').value||'Outro',
+        prioridade: document.getElementById('f-prioridade').value,
+        coluna:     document.getElementById('f-coluna').value,
+        projeto_id: document.getElementById('f-projeto').value||null,
+        solicitado_por: document.getElementById('f-solicitado-por').value.trim(),
         data_inicio:document.getElementById('f-data-inicio').value||null,
-        data_fim:document.getElementById('f-data-fim').value||null,
-        tipo:'Outro',tags:'',solucao:'',link:'',tempo_gasto:0,solicitado_por:'',
+        data_fim:   document.getElementById('f-data-fim').value||null,
+        tempo_gasto:parseTempo(document.getElementById('f-tempo').value),
+        alarme_em:  document.getElementById('f-alarme').value||null,
+        tags:'', link:'',
     }
     if(editingId){payload.id=editingId;await req('atualizar',payload);toast('Atualizada','ok')}
     else{await req('criar',payload);toast('Criada','ok')}
