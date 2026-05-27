@@ -465,23 +465,34 @@ let tipoRec='semanal', diasSelecionados=new Set(), ativoRec=true
     projetos=await req('projetos')
     buildProjetoSelects()
     await Promise.all([carregarCards(), carregarRecorrencias()])
+    buildExecLookup()
     render()
 })()
 
 async function carregarCards(){
     allCards=await req('listar',null,{limit:500})
-    buildExecLookup()
 }
 
 let execLookup = {} // "recId_date" -> coluna
 
 function buildExecLookup(){
     execLookup={}
+    // índice por recorrencia_id (cards novos)
     allCards.forEach(c=>{
         if(c.recorrencia_id && c.data_inicio){
-            const date=c.data_inicio.slice(0,10)
-            execLookup[`${c.recorrencia_id}_${date}`]=c.coluna
+            execLookup[`${c.recorrencia_id}_${c.data_inicio.slice(0,10)}`]=c.coluna
         }
+    })
+    // fallback: cruza título + data para cards criados antes do campo existir
+    recorrencias.forEach(r=>{
+        allCards.forEach(c=>{
+            if(!c.recorrencia_id && c.data_inicio &&
+               c.titulo.trim().toLowerCase()===r.titulo.trim().toLowerCase()){
+                const date=c.data_inicio.slice(0,10)
+                const key=`${r.id}_${date}`
+                if(!execLookup[key]) execLookup[key]=c.coluna
+            }
+        })
     })
 }
 async function carregarRecorrencias(){
@@ -715,16 +726,16 @@ function descRecorrencia(r){
 document.getElementById('btn-prev').addEventListener('click',()=>{
     if(currentView==='mes') viewDate.setMonth(viewDate.getMonth()-1)
     else viewDate.setDate(viewDate.getDate()-7)
-    carregarCards().then(render)
+    carregarCards().then(()=>{ buildExecLookup(); render() })
 })
 document.getElementById('btn-next').addEventListener('click',()=>{
     if(currentView==='mes') viewDate.setMonth(viewDate.getMonth()+1)
     else viewDate.setDate(viewDate.getDate()+7)
-    carregarCards().then(render)
+    carregarCards().then(()=>{ buildExecLookup(); render() })
 })
 document.getElementById('btn-hoje').addEventListener('click',()=>{
     viewDate=new Date(hoje.getFullYear(),hoje.getMonth(),1)
-    carregarCards().then(render)
+    carregarCards().then(()=>{ buildExecLookup(); render() })
 })
 function setView(v){
     currentView=v
@@ -788,12 +799,12 @@ async function salvarCard(){
     }
     if(editingId){payload.id=editingId;await req('atualizar',payload);toast('Atualizada','ok')}
     else{await req('criar',payload);toast('Criada','ok')}
-    fecharModal(); await carregarCards(); render()
+    fecharModal(); await carregarCards(); buildExecLookup(); render()
 }
 async function deletarCard(){
     if(!editingId||!confirm('Mover para a lixeira?'))return
     await req('deletar',{id:editingId}); toast('Excluída','ok')
-    fecharModal(); await carregarCards(); render()
+    fecharModal(); await carregarCards(); buildExecLookup(); render()
 }
 
 /* ── MODAL RECORRÊNCIA ── */
@@ -964,6 +975,7 @@ async function confirmarExecucao() {
     toast(`"${r.titulo}" registrada no board ✓`, 'ok')
     fecharModalExec()
     await carregarCards()
+    buildExecLookup()
     render()
 }
 
