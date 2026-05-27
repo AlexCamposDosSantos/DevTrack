@@ -1,6 +1,6 @@
 <?php
 define('DB_PATH', __DIR__ . '/data/devtrack.sqlite');
-define('DB_VERSION', 5);
+define('DB_VERSION', 7);
 
 function getDB(): PDO {
     static $pdo = null;
@@ -144,6 +144,16 @@ function runMigrations(PDO $db): void {
             FOREIGN KEY (projeto_id) REFERENCES projetos(id) ON DELETE SET NULL
         )");
         $db->exec("PRAGMA user_version = 5");
+    }
+
+    if ($version < 6) {
+        try { $db->exec("ALTER TABLE atividades ADD COLUMN alarme_em TEXT"); } catch (\Exception $e) {}
+        $db->exec("PRAGMA user_version = 6");
+    }
+
+    if ($version < 7) {
+        try { $db->exec("ALTER TABLE recorrencias ADD COLUMN alarme_hora TEXT"); } catch (\Exception $e) {}
+        $db->exec("PRAGMA user_version = 7");
     }
 
     if ($version < 4) {

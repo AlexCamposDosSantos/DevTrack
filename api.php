@@ -39,6 +39,7 @@ switch ($action) {
     case 'criar_etapa':      etapasCriar();      break;
     case 'atualizar_etapa':  etapasAtualizar();  break;
     case 'deletar_etapa':    etapasDeletar();    break;
+    case 'alarme_dispensar': alarmeDispensar();  break;
     default: echo json_encode(['erro' => 'Ação inválida']);
 }
 
@@ -66,6 +67,21 @@ function safeDate(?string $val): ?string {
     if (!$val) return null;
     $d = DateTime::createFromFormat('Y-m-d', $val);
     return ($d && $d->format('Y-m-d') === $val) ? $val : null;
+}
+
+function safeHora(?string $val): ?string {
+    if (!$val) return null;
+    $val = trim($val);
+    $d = DateTime::createFromFormat('H:i', $val);
+    return ($d && strlen($val) >= 4) ? $d->format('H:i') : null;
+}
+
+function safeAlarme(?string $val): ?string {
+    if (!$val) return null;
+    $val = trim($val);
+    $d = DateTime::createFromFormat('Y-m-d H:i', $val)
+      ?? DateTime::createFromFormat('Y-m-d\TH:i', $val);
+    return $d ? $d->format('Y-m-d H:i:00') : null;
 }
 
 function safeTagLike(PDO $db, string $nome): array {
@@ -147,8 +163,8 @@ function criar(): void {
 
     $stmt = $db->prepare("INSERT INTO atividades
         (titulo, descricao, solucao, tipo, prioridade, coluna, projeto_id, tags,
-         link, tempo_gasto, data_inicio, data_fim, solicitado_por, ordem)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+         link, tempo_gasto, data_inicio, data_fim, solicitado_por, ordem, alarme_em)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
 
     $stmt->execute([
         $titulo,
@@ -165,6 +181,7 @@ function criar(): void {
         safeDate($d['data_fim']    ?? null),
         trim($d['solicitado_por'] ?? ''),
         $ordem,
+        safeAlarme($d['alarme_em'] ?? null),
     ]);
 
     $id = $db->lastInsertId();
@@ -191,7 +208,7 @@ function atualizar(): void {
     $stmt = $db->prepare("UPDATE atividades SET
         titulo=?, descricao=?, solucao=?, tipo=?, prioridade=?,
         projeto_id=?, tags=?, link=?, tempo_gasto=?, data_inicio=?,
-        data_fim=?, solicitado_por=?, atualizado_em=datetime('now','localtime')
+        data_fim=?, solicitado_por=?, alarme_em=?, atualizado_em=datetime('now','localtime')
         WHERE id=?");
 
     $stmt->execute([
@@ -207,6 +224,7 @@ function atualizar(): void {
         safeDate($d['data_inicio'] ?? null),
         safeDate($d['data_fim']    ?? null),
         trim($d['solicitado_por'] ?? ''),
+        safeAlarme($d['alarme_em'] ?? null),
         $id,
     ]);
 
@@ -448,7 +466,7 @@ function recorrenciasCriar(): void {
     if (!$titulo) { echo json_encode(['erro' => 'Título obrigatório']); return; }
     $tipo = in_array($d['tipo'] ?? '', ['semanal','mensal','diario']) ? $d['tipo'] : 'semanal';
     $dias = json_encode(array_map('intval', (array)($d['dias'] ?? [])));
-    $stmt = $db->prepare("INSERT INTO recorrencias (titulo, descricao, tipo, dias, prioridade, projeto_id, cor) VALUES (?,?,?,?,?,?,?)");
+    $stmt = $db->prepare("INSERT INTO recorrencias (titulo, descricao, tipo, dias, prioridade, projeto_id, cor, alarme_hora) VALUES (?,?,?,?,?,?,?,?)");
     $stmt->execute([
         $titulo,
         $d['descricao'] ?? '',
@@ -457,6 +475,7 @@ function recorrenciasCriar(): void {
         safePrioridade($d['prioridade'] ?? 'media'),
         !empty($d['projeto_id']) ? (int)$d['projeto_id'] : null,
         $d['cor'] ?? '#58a6ff',
+        safeHora($d['alarme_hora'] ?? null),
     ]);
     echo json_encode(['ok' => true, 'id' => $db->lastInsertId()]);
 }
@@ -468,7 +487,7 @@ function recorrenciasAtualizar(): void {
     if (!$titulo) { echo json_encode(['erro' => 'Título obrigatório']); return; }
     $tipo = in_array($d['tipo'] ?? '', ['semanal','mensal','diario']) ? $d['tipo'] : 'semanal';
     $dias = json_encode(array_map('intval', (array)($d['dias'] ?? [])));
-    $db->prepare("UPDATE recorrencias SET titulo=?, descricao=?, tipo=?, dias=?, prioridade=?, projeto_id=?, cor=?, ativo=? WHERE id=?")
+    $db->prepare("UPDATE recorrencias SET titulo=?, descricao=?, tipo=?, dias=?, prioridade=?, projeto_id=?, cor=?, ativo=?, alarme_hora=? WHERE id=?")
        ->execute([
            $titulo,
            $d['descricao'] ?? '',
@@ -478,6 +497,7 @@ function recorrenciasAtualizar(): void {
            !empty($d['projeto_id']) ? (int)$d['projeto_id'] : null,
            $d['cor'] ?? '#58a6ff',
            isset($d['ativo']) ? (int)(bool)$d['ativo'] : 1,
+           safeHora($d['alarme_hora'] ?? null),
            (int)$d['id'],
        ]);
     echo json_encode(['ok' => true]);
@@ -524,6 +544,14 @@ function etapasDeletar(): void {
     $db = getDB();
     $d  = input();
     $db->prepare("DELETE FROM etapas WHERE id=?")->execute([(int)$d['id']]);
+    echo json_encode(['ok' => true]);
+}
+
+/* ─── ALARMES ─── */
+function alarmeDispensar(): void {
+    $db = getDB();
+    $d  = input();
+    $db->prepare("UPDATE atividades SET alarme_em=NULL WHERE id=?")->execute([(int)$d['id']]);
     echo json_encode(['ok' => true]);
 }
 

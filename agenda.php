@@ -13,6 +13,29 @@
     <a href="index.php" class="text-dt-accent font-bold text-sm flex items-center gap-1.5 no-underline">⬡ DevTrack</a>
     <div class="h-4 w-px bg-dt-border"></div>
     <span class="text-dt-muted text-xs">Agenda</span>
+    <div class="h-4 w-px bg-dt-border"></div>
+    <span id="clock-browser" class="font-mono text-dt-text tabular-nums text-xs">--:--:--</span>
+    <div class="relative">
+        <button id="btn-alarm-avulso" onclick="toggleAlarmPanel()"
+            class="dt-btn-ghost-sm flex items-center gap-1.5 relative">
+            🔔
+            <span id="alarm-avulso-badge" class="hidden absolute -top-1 -right-1 w-2 h-2 rounded-full bg-dt-yellow"></span>
+        </button>
+        <div id="alarm-avulso-panel" style="display:none"
+            class="absolute left-0 top-full mt-2 w-72 bg-dt-surface border border-dt-border rounded-xl shadow-modal z-[200] p-4 flex flex-col gap-3">
+            <p class="text-xs font-semibold text-dt-text">Novo lembrete</p>
+            <div>
+                <label class="dt-label">Horário</label>
+                <input id="alarm-avulso-hora" type="time" class="dt-input">
+            </div>
+            <div>
+                <label class="dt-label">Observação</label>
+                <input id="alarm-avulso-obs" type="text" class="dt-input" placeholder="Do que você quer ser lembrado?">
+            </div>
+            <button onclick="adicionarAlarmAvulso()" class="dt-btn dt-btn-sm w-full">+ Adicionar lembrete</button>
+            <div id="alarm-avulso-lista" class="flex flex-col gap-1.5 empty:hidden"></div>
+        </div>
+    </div>
     <div class="flex-1"></div>
     <a href="relatorio.php" target="_blank" class="dt-btn-ghost-sm hidden sm:inline-flex">📊 Relatório</a>
     <a href="config.php" class="dt-btn-ghost-sm hidden sm:inline-flex">⚙ Config</a>
@@ -239,6 +262,18 @@
             <textarea id="r-descricao" rows="2" class="dt-input resize-y" placeholder="Detalhes opcionais..."></textarea>
         </div>
 
+        <div>
+            <label class="dt-label flex items-center gap-1.5">
+                🔔 Alarme diário
+                <span class="text-[10px] text-dt-muted/60 font-normal">(notificação no horário)</span>
+            </label>
+            <div class="flex gap-2 items-center">
+                <input id="r-alarme-hora" type="time" class="dt-input flex-1">
+                <button type="button" id="btn-rec-alarme-limpar" onclick="limparAlarmeRec()" style="display:none"
+                    class="dt-btn-ghost-sm text-dt-red border-dt-red/30 hover:bg-dt-red/10 whitespace-nowrap">✕ Limpar</button>
+            </div>
+        </div>
+
         <!-- Toggle ativo -->
         <div id="r-ativo-section" class="hidden flex items-center gap-2 pt-1">
             <label class="text-xs text-dt-muted flex-1">Recorrência ativa</label>
@@ -256,7 +291,118 @@
 
 <div id="toast-container" class="fixed bottom-6 right-6 z-[200] flex flex-col gap-2 pointer-events-none"></div>
 
+<script src="assets/js/alarmes.js"></script>
 <script>
+/* ── relógio browser ── */
+;(function(){
+    function tick(){
+        const d=new Date()
+        const pad=n=>String(n).padStart(2,'0')
+        document.getElementById('clock-browser').textContent=`${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+    }
+    tick(); setInterval(tick,1000)
+})()
+
+/* ── alarmes avulsos ── */
+const ALARM_KEY='dt-alarmes-avulsos'
+
+function getAlarmes(){ try{ return JSON.parse(localStorage.getItem(ALARM_KEY)||'[]') }catch{ return [] } }
+function saveAlarmes(list){ localStorage.setItem(ALARM_KEY, JSON.stringify(list)) }
+
+function toggleAlarmPanel(){
+    const p=document.getElementById('alarm-avulso-panel')
+    const open=p.style.display==='none'
+    p.style.display=open?'flex':'none'
+    if(open){ renderAlarmesList(); document.getElementById('alarm-avulso-obs').focus() }
+}
+
+function adicionarAlarmAvulso(){
+    const hora=document.getElementById('alarm-avulso-hora').value
+    const obs=document.getElementById('alarm-avulso-obs').value.trim()
+    if(!hora){ document.getElementById('alarm-avulso-hora').focus(); return }
+    if(!obs){ document.getElementById('alarm-avulso-obs').focus(); return }
+    const list=getAlarmes()
+    list.push({ id: Date.now(), hora, obs, data: new Date().toISOString().slice(0,10) })
+    saveAlarmes(list)
+    document.getElementById('alarm-avulso-hora').value=''
+    document.getElementById('alarm-avulso-obs').value=''
+    renderAlarmesList()
+    atualizarBadge()
+    toast('Lembrete adicionado para '+hora,'ok')
+}
+
+function removerAlarmAvulso(id){
+    saveAlarmes(getAlarmes().filter(a=>a.id!==id))
+    renderAlarmesList()
+    atualizarBadge()
+}
+
+function renderAlarmesList(){
+    const el=document.getElementById('alarm-avulso-lista')
+    const list=getAlarmes()
+    if(!list.length){ el.innerHTML=''; return }
+    el.innerHTML=`<p class="text-[10px] font-semibold text-dt-muted uppercase tracking-wider mt-1">Lembretes ativos</p>`+
+        list.map(a=>`
+        <div class="flex items-center gap-2 bg-dt-base border border-dt-border rounded-lg px-3 py-2">
+            <span class="text-xs font-mono font-semibold text-dt-yellow tabular-nums">${esc(a.hora)}</span>
+            <span class="text-xs flex-1 text-dt-text truncate">${esc(a.obs)}</span>
+            <button onclick="removerAlarmAvulso(${a.id})" class="text-dt-muted hover:text-dt-red text-xs bg-transparent border-0 cursor-pointer p-0.5">✕</button>
+        </div>`).join('')
+}
+
+function atualizarBadge(){
+    const badge=document.getElementById('alarm-avulso-badge')
+    badge.classList.toggle('hidden', getAlarmes().length===0)
+}
+
+function checkAlarmesAvulsos(){
+    const now=new Date()
+    const hh=String(now.getHours()).padStart(2,'0')
+    const mm=String(now.getMinutes()).padStart(2,'0')
+    const horaAtual=`${hh}:${mm}`
+    const dataHoje=now.toISOString().slice(0,10)
+    const list=getAlarmes()
+    const restantes=[]
+    list.forEach(a=>{
+        if(a.hora===horaAtual && a.data===dataHoje){
+            triggerAlarm(
+                'Lembrete',
+                a.obs,
+                ()=>{ /* dismiss: já removido da lista */ },
+                ()=>{
+                    // soneca: reagendar em 10 min
+                    const snoozeAt=new Date(Date.now()+10*60000)
+                    const pad=n=>String(n).padStart(2,'0')
+                    const novo={...a, hora:`${pad(snoozeAt.getHours())}:${pad(snoozeAt.getMinutes())}`, data:snoozeAt.toISOString().slice(0,10)}
+                    saveAlarmes([...getAlarmes(), novo])
+                    renderAlarmesList(); atualizarBadge()
+                }
+            )
+        } else {
+            restantes.push(a)
+        }
+    })
+    if(restantes.length!==list.length){
+        saveAlarmes(restantes)
+        renderAlarmesList()
+        atualizarBadge()
+    }
+}
+
+// fechar panel ao clicar fora
+document.addEventListener('click',e=>{
+    const panel=document.getElementById('alarm-avulso-panel')
+    const btn=document.getElementById('btn-alarm-avulso')
+    if(panel&&panel.style.display!=='none'&&!panel.contains(e.target)&&!btn.contains(e.target))
+        panel.style.display='none'
+})
+
+document.getElementById('alarm-avulso-obs')?.addEventListener('keydown',e=>{
+    if(e.key==='Enter'){ e.preventDefault(); adicionarAlarmAvulso() }
+})
+
+atualizarBadge()
+
 /* ── helpers ── */
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
 function toast(msg,type='ok'){
@@ -476,7 +622,7 @@ function renderSidebar(){
             <span class="w-2 h-2 rounded-full flex-shrink-0 mt-1" style="background:${cor}"></span>
             <div class="flex-1 min-w-0">
                 <p class="text-xs font-medium truncate ${r.ativo?'text-dt-text':'text-dt-muted line-through'}">${esc(r.titulo)}</p>
-                <p class="text-[10px] text-dt-muted/70 mt-0.5">${descRecorrencia(r)}</p>
+                <p class="text-[10px] text-dt-muted/70 mt-0.5">${descRecorrencia(r)}${r.alarme_hora?` · 🔔 ${r.alarme_hora}`:''}</p>
                 ${r.projeto_nome?`<p class="text-[10px] text-dt-muted/50 truncate">${esc(r.projeto_nome)}</p>`:''}
             </div>
             <div class="flex gap-1 opacity-0 group-hover/rec:opacity-100 transition-opacity">
@@ -610,6 +756,9 @@ function abrirModalRecorrenciaEditar(id){
     document.getElementById('r-prioridade').value=r.prioridade||'media'
     document.getElementById('r-cor').value=r.cor||'#58a6ff'
     document.getElementById('r-projeto').value=r.projeto_id||''
+    const alarmeHoraEl=document.getElementById('r-alarme-hora')
+    alarmeHoraEl.value=r.alarme_hora||''
+    document.getElementById('btn-rec-alarme-limpar').style.display=r.alarme_hora?'':'none'
     ativoRec=!!r.ativo; atualizarToggleAtivo()
     // tipo e dias
     setTipoRec(r.tipo||'semanal')
@@ -620,12 +769,18 @@ function abrirModalRecorrenciaEditar(id){
 }
 function fecharModalRec(){ fecharBackdrop(recBackdrop); editingRecId=null }
 function limparModalRec(){
-    ['r-titulo','r-descricao'].forEach(id=>document.getElementById(id).value='')
+    ['r-titulo','r-descricao','r-alarme-hora'].forEach(id=>document.getElementById(id).value='')
     document.getElementById('r-prioridade').value='media'
     document.getElementById('r-cor').value='#58a6ff'
     document.getElementById('r-projeto').value=''
+    document.getElementById('btn-rec-alarme-limpar').style.display='none'
     diasSelecionados=new Set(); ativoRec=true
     setTipoRec('semanal')
+}
+
+function limparAlarmeRec(){
+    document.getElementById('r-alarme-hora').value=''
+    document.getElementById('btn-rec-alarme-limpar').style.display='none'
 }
 
 function setTipoRec(tipo){
@@ -683,6 +838,7 @@ async function salvarRecorrencia(){
         cor:document.getElementById('r-cor').value,
         projeto_id:document.getElementById('r-projeto').value||null,
         ativo:ativoRec,
+        alarme_hora:document.getElementById('r-alarme-hora').value||null,
     }
     if(editingRecId){
         payload.id=editingRecId
@@ -726,6 +882,56 @@ document.addEventListener('keydown',e=>{
 })
 backdrop.addEventListener('click',e=>{ if(e.target===backdrop) fecharModal() })
 recBackdrop.addEventListener('click',e=>{ if(e.target===recBackdrop) fecharModalRec() })
+
+document.addEventListener('change',e=>{
+    if(e.target.id==='r-alarme-hora'){
+        document.getElementById('btn-rec-alarme-limpar').style.display=e.target.value?'':'none'
+    }
+})
+
+/* ── ALARMES RECORRÊNCIAS ── */
+function recorrenciaAtivaHoje(r){
+    const d=new Date()
+    const diaSemana=d.getDay(), diaMes=d.getDate()
+    const ultimoDiaMes=new Date(d.getFullYear(),d.getMonth()+1,0).getDate()
+    const isUltimoDia=diaMes===ultimoDiaMes
+    const dias=JSON.parse(r.dias||'[]')
+    if(!r.ativo) return false
+    if(r.tipo==='diario') return true
+    if(r.tipo==='semanal') return dias.includes(diaSemana)
+    if(r.tipo==='mensal') return dias.includes(diaMes)||(isUltimoDia&&dias.includes(0))
+    return false
+}
+
+function _snoozeRecorrencia(id){
+    const snoozeAt=new Date(Date.now()+10*60000)
+    const pad=n=>String(n).padStart(2,'0')
+    localStorage.setItem(`dt-rec-snooze-${id}`,`${pad(snoozeAt.getHours())}:${pad(snoozeAt.getMinutes())}`)
+}
+
+function checkAlarmesRec(){
+    const now=new Date()
+    const hh=String(now.getHours()).padStart(2,'0')
+    const mm=String(now.getMinutes()).padStart(2,'0')
+    const horaAtual=`${hh}:${mm}`
+    const dataHoje=now.toISOString().slice(0,10)
+    recorrencias.forEach(r=>{
+        if(!r.alarme_hora||!r.ativo) return
+        if(!recorrenciaAtivaHoje(r)) return
+        const snoozeKey=`dt-rec-snooze-${r.id}`
+        const horaEfetiva=localStorage.getItem(snoozeKey)||r.alarme_hora
+        if(horaEfetiva!==horaAtual) return
+        const fireKey=`dt-rec-alarm-${r.id}-${dataHoje}-${horaAtual}`
+        if(localStorage.getItem(fireKey)) return
+        localStorage.setItem(fireKey,'1')
+        localStorage.removeItem(snoozeKey)
+        triggerAlarm('Recorrente – '+r.titulo, r.descricao||'', ()=>{}, ()=>_snoozeRecorrencia(r.id))
+    })
+}
+
+requestNotifPermission()
+setInterval(()=>{ checkAlarmesRec(); checkAlarmesAvulsos() }, 60000)
+setTimeout(()=>{ checkAlarmesRec(); checkAlarmesAvulsos() }, 2000)
 </script>
 </body>
 </html>

@@ -20,13 +20,13 @@ const HIST_LABELS = { mover:'↔ Movido', editar:'✏ Editado', criar:'✚ Criad
 let cards=[], projetos=[], tipos=[], allTags=[], selectedTags=new Set(), wipLimits={}
 let filtros={ busca:'', projeto_id:'', prioridade:'', tipo:'', de:'', ate:'' }
 let editingId=null, dragCardId=null, searchTimer=null
-let etapas=[]
+let etapas=[], recorrencias=[]
 let currentView=localStorage.getItem('dt-view')||'board'
 let sortField='criado_em', sortDir='desc'
 
 /* ─── INIT ─── */
 document.addEventListener('DOMContentLoaded', async () => {
-    await Promise.all([loadProjetos(), loadTipos(), loadAllTags(), loadConfig()])
+    await Promise.all([loadProjetos(), loadTipos(), loadAllTags(), loadConfig(), loadRecorrencias()])
     applyView()
     await loadCards()
     setupFilters()
@@ -42,9 +42,10 @@ async function api(action, body=null, extra={}) {
     return res.json()
 }
 
-async function loadProjetos() { projetos=await api('projetos'); buildProjetoSelects() }
-async function loadTipos()    { tipos   =await api('tipos');    buildTipoSelects() }
-async function loadAllTags()  { allTags =await api('tags');     renderTagPicker() }
+async function loadProjetos()     { projetos    =await api('projetos');    buildProjetoSelects() }
+async function loadTipos()        { tipos       =await api('tipos');       buildTipoSelects() }
+async function loadAllTags()      { allTags     =await api('tags');        renderTagPicker() }
+async function loadRecorrencias() { recorrencias=await api('recorrencias') }
 async function loadConfig()   {
     const cached = localStorage.getItem('dt-wip-cache')
     const cacheTs = parseInt(localStorage.getItem('dt-wip-ts')||'0')
@@ -191,6 +192,7 @@ function renderCard(c) {
         ${tags?`<div class="flex flex-wrap gap-1 mb-1.5">${tags}</div>`:''}
         <div class="flex items-center gap-2 mt-2 pt-1.5 border-t border-dt-border/30">
             ${c.tempo_gasto>0?`<span class="text-xs text-dt-muted/60">⏱ ${fmtTime(c.tempo_gasto)}</span>`:''}
+            ${c.alarme_em?`<span class="text-xs text-dt-yellow/80 flex items-center gap-0.5" title="Alarme: ${fmtDateTime(c.alarme_em)}">🔔 ${fmtDateTime(c.alarme_em)}</span>`:''}
             <span class="text-[11px] text-dt-muted/50 ml-auto tabular-nums" title="${c.atualizado_em?'Atualizado em '+fmtDateTime(c.atualizado_em):''}">${c.atualizado_em?'✎ '+fmtDate(c.atualizado_em):fmtDate(c.criado_em)}</span>
         </div>
     </div>
@@ -412,6 +414,12 @@ function openModal(id=null, defaultColuna='backlog') {
     document.getElementById('f-data-inicio').value     = card?.data_inicio    ?? ''
     document.getElementById('f-data-fim').value        = card?.data_fim       ?? ''
     document.getElementById('f-solicitado-por').value  = card?.solicitado_por ?? ''
+    const alarmeEl = document.getElementById('f-alarme')
+    const alarmeBtn = document.getElementById('btn-alarme-limpar')
+    if (alarmeEl) {
+        alarmeEl.value = card?.alarme_em ? card.alarme_em.replace(' ','T').substring(0,16) : ''
+        if (alarmeBtn) alarmeBtn.style.display = card?.alarme_em ? '' : 'none'
+    }
     document.getElementById('f-tipo').value            = card?.tipo ?? (tipos[0]?.nome ?? '')
     selectedTags = new Set((card?.tags||'').split(',').map(t=>t.trim()).filter(Boolean))
     renderTagPicker(); syncTagsInput()
@@ -497,6 +505,7 @@ async function saveCard() {
         data_inicio:   document.getElementById('f-data-inicio').value || null,
         data_fim:      document.getElementById('f-data-fim').value    || null,
         solicitado_por:document.getElementById('f-solicitado-por').value.trim(),
+        alarme_em:     document.getElementById('f-alarme')?.value || null,
     }
     if (editingId) { payload.id=editingId; await api('atualizar',payload); toast('Atualizada','ok') }
     else           {                        await api('criar',payload);      toast('Criada','ok') }
@@ -778,3 +787,96 @@ function parseTime(s) {
     if (!hM && !mM) { const n=parseInt(s); if(!isNaN(n)) t=n }
     return t
 }
+
+/* ─── ALARMES ─── */
+function limparAlarme() {
+    const el = document.getElementById('f-alarme')
+    const btn = document.getElementById('btn-alarme-limpar')
+    if (el) el.value = ''
+    if (btn) btn.style.display = 'none'
+}
+
+document.addEventListener('change', e => {
+    if (e.target.id === 'f-alarme') {
+        const btn = document.getElementById('btn-alarme-limpar')
+        if (btn) btn.style.display = e.target.value ? '' : 'none'
+    }
+})
+
+function recorrenciaAtivaHoje(r) {
+    const d = new Date()
+    const diaSemana = d.getDay(), diaMes = d.getDate()
+    const ultimoDiaMes = new Date(d.getFullYear(), d.getMonth()+1, 0).getDate()
+    const isUltimoDia = diaMes === ultimoDiaMes
+    const dias = JSON.parse(r.dias || '[]')
+    if (!r.ativo) return false
+    if (r.tipo === 'diario') return true
+    if (r.tipo === 'semanal') return dias.includes(diaSemana)
+    if (r.tipo === 'mensal') return dias.includes(diaMes) || (isUltimoDia && dias.includes(0))
+    return false
+}
+
+function _snoozeCard(card) {
+    const snoozeAt = new Date(Date.now() + 10 * 60000)
+    const pad = n => String(n).padStart(2,'0')
+    const novoAlarme = `${snoozeAt.getFullYear()}-${pad(snoozeAt.getMonth()+1)}-${pad(snoozeAt.getDate())} ${pad(snoozeAt.getHours())}:${pad(snoozeAt.getMinutes())}:00`
+    card.alarme_em = novoAlarme
+    api('atualizar', { ...card, alarme_em: novoAlarme })
+    toast('Soneca: lembrete em 10 min', 'ok')
+}
+
+function _snoozeRecorrencia(id) {
+    const key = `dt-rec-snooze-${id}`
+    const snoozeAt = new Date(Date.now() + 10 * 60000)
+    const pad = n => String(n).padStart(2,'0')
+    localStorage.setItem(key, `${pad(snoozeAt.getHours())}:${pad(snoozeAt.getMinutes())}`)
+    toast('Soneca: lembrete em 10 min', 'ok')
+}
+
+function checkAlarmes() {
+    const now = new Date()
+
+    // Alarmes de tarefas pontuais
+    cards.forEach(c => {
+        if (!c.alarme_em) return
+        const alarmTime = new Date(c.alarme_em.replace(' ', 'T'))
+        if (alarmTime <= now) {
+            api('alarme_dispensar', { id: c.id })
+            c.alarme_em = null
+            render()
+            triggerAlarm(
+                'Lembrete DevTrack',
+                c.titulo,
+                () => {},
+                () => _snoozeCard(c)
+            )
+        }
+    })
+
+    // Alarmes de recorrências (horário do dia)
+    const hh = String(now.getHours()).padStart(2,'0')
+    const mm = String(now.getMinutes()).padStart(2,'0')
+    const horaAtual = `${hh}:${mm}`
+    const dataHoje = now.toISOString().slice(0,10)
+    recorrencias.forEach(r => {
+        if (!r.alarme_hora || !r.ativo) return
+        if (!recorrenciaAtivaHoje(r)) return
+        const snoozeKey = `dt-rec-snooze-${r.id}`
+        const horaEfetiva = localStorage.getItem(snoozeKey) || r.alarme_hora
+        if (horaEfetiva !== horaAtual) return
+        const fireKey = `dt-rec-alarm-${r.id}-${dataHoje}-${horaAtual}`
+        if (localStorage.getItem(fireKey)) return
+        localStorage.setItem(fireKey, '1')
+        localStorage.removeItem(snoozeKey)
+        triggerAlarm(
+            'Recorrente – ' + r.titulo,
+            r.descricao || '',
+            () => {},
+            () => _snoozeRecorrencia(r.id)
+        )
+    })
+}
+
+requestNotifPermission()
+setInterval(checkAlarmes, 60000)
+setTimeout(checkAlarmes, 3000)
