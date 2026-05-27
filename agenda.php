@@ -289,6 +289,35 @@
 </div>
 </div>
 
+<!-- ── MODAL EXECUTAR RECORRÊNCIA ── -->
+<div id="modal-exec-backdrop" class="fixed inset-0 z-[100] hidden items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+<div class="bg-dt-surface border border-dt-border/80 rounded-2xl w-full max-w-md flex flex-col overflow-hidden shadow-modal">
+    <div class="flex items-center gap-3 px-4 py-3 border-b border-dt-border">
+        <span class="font-semibold text-sm flex-1">✅ Registrar execução</span>
+        <button onclick="fecharModalExec()" class="w-6 h-6 flex items-center justify-center text-dt-muted hover:text-dt-text hover:bg-dt-border/60 rounded-lg cursor-pointer bg-transparent border-0 text-sm">✕</button>
+    </div>
+    <div class="px-4 py-4 flex flex-col gap-3">
+        <p class="text-xs text-dt-muted">Registrar <strong id="exec-rec-titulo" class="text-dt-text"></strong> como executada em <strong id="exec-rec-data" class="text-dt-text"></strong>?</p>
+        <div>
+            <label class="dt-label">Coluna de destino</label>
+            <select id="exec-coluna" class="dt-select sel">
+                <option value="concluido">✅ Concluído</option>
+                <option value="andamento">🔵 Em Andamento</option>
+                <option value="revisao">🟣 Em Revisão</option>
+            </select>
+        </div>
+        <div>
+            <label class="dt-label">Observação (opcional)</label>
+            <input id="exec-obs" type="text" class="dt-input" placeholder="Algum detalhe sobre a execução...">
+        </div>
+    </div>
+    <div class="flex justify-end gap-2 px-4 py-2.5 border-t border-dt-border bg-dt-base/30 flex-shrink-0">
+        <button onclick="fecharModalExec()" class="dt-btn-ghost dt-btn-ghost-sm">Cancelar</button>
+        <button onclick="confirmarExecucao()" class="dt-btn dt-btn-sm">Registrar no board</button>
+    </div>
+</div>
+</div>
+
 <div id="toast-container" class="fixed bottom-6 right-6 z-[200] flex flex-col gap-2 pointer-events-none"></div>
 
 <script src="assets/js/alarmes.js"></script>
@@ -441,6 +470,19 @@ let tipoRec='semanal', diasSelecionados=new Set(), ativoRec=true
 
 async function carregarCards(){
     allCards=await req('listar',null,{limit:500})
+    buildExecLookup()
+}
+
+let execLookup = {} // "recId_date" -> coluna
+
+function buildExecLookup(){
+    execLookup={}
+    allCards.forEach(c=>{
+        if(c.recorrencia_id && c.data_inicio){
+            const date=c.data_inicio.slice(0,10)
+            execLookup[`${c.recorrencia_id}_${date}`]=c.coluna
+        }
+    })
 }
 async function carregarRecorrencias(){
     recorrencias=await req('recorrencias')
@@ -501,11 +543,19 @@ function renderMes(){
 
         const pills=todos.slice(0,4).map(item=>{
             if(item._rec){
+                const done = execLookup[`${item.id}_${dateStr}`]
+                if(done){
+                    return `<div class="w-full text-[10px] px-1.5 py-0.5 rounded-md truncate flex items-center gap-1"
+                        style="background:#3fb95022;color:#3fb950;border-left:2px solid #3fb950"
+                        title="${esc(item.titulo)} — concluída">
+                        <span class="text-[8px]">✓</span>${esc(item.titulo)}</div>`
+                }
                 const cor=item.cor||'#58a6ff'
-                return `<div class="w-full text-[10px] px-1.5 py-0.5 rounded-md truncate flex items-center gap-1"
+                return `<button onclick="event.stopPropagation();abrirModalExec(${item.id},'${dateStr}')"
+                    class="w-full text-left text-[10px] px-1.5 py-0.5 rounded-md truncate flex items-center gap-1 cursor-pointer border-0 hover:opacity-80 transition-opacity"
                     style="background:${cor}22;color:${cor};border-left:2px solid ${cor}"
-                    title="${esc(item.titulo)} (recorrente)">
-                    <span class="opacity-60 text-[8px]">🔁</span>${esc(item.titulo)}</div>`
+                    title="${esc(item.titulo)} — clique para registrar execução">
+                    <span class="opacity-60 text-[8px]">🔁</span>${esc(item.titulo)}</button>`
             }
             const pri=PRI[item.prioridade]||PRI.media
             return `<button onclick="abrirModalEditar(${item.id})"
@@ -567,15 +617,28 @@ function renderSemana(){
         }).join('')
 
         const recPills=dayRec.map(r=>{
+            const done = execLookup[`${r.id}_${dateStr}`]
+            if(done){
+                return `<div class="w-full text-[10px] px-2 py-1 rounded-md flex gap-1 items-start"
+                    style="background:#3fb95022;color:#3fb950;border-left:2px solid #3fb950">
+                    <span class="mt-0.5">✓</span>
+                    <div>
+                        <div class="font-medium">${esc(r.titulo)}</div>
+                        <div class="opacity-60">${descRecorrencia(r)}</div>
+                    </div>
+                </div>`
+            }
             const cor=r.cor||'#58a6ff'
-            return `<div class="w-full text-[10px] px-2 py-1 rounded-md flex gap-1 items-start"
-                style="background:${cor}22;color:${cor};border-left:2px solid ${cor}">
+            return `<button onclick="abrirModalExec(${r.id},'${dateStr}')"
+                class="w-full text-left text-[10px] px-2 py-1 rounded-md flex gap-1 items-start cursor-pointer border-0 hover:opacity-80 transition-opacity"
+                style="background:${cor}22;color:${cor};border-left:2px solid ${cor}"
+                title="${esc(r.titulo)} — clique para registrar execução">
                 <span class="opacity-60 mt-0.5">🔁</span>
                 <div>
                     <div class="font-medium">${esc(r.titulo)}</div>
                     <div class="opacity-60">${descRecorrencia(r)}</div>
                 </div>
-            </div>`
+            </button>`
         }).join('')
 
         html+=`<div class="flex flex-col gap-1 min-h-[200px]">
@@ -854,6 +917,61 @@ async function deletarRecorrencia(){
     await req('deletar_recorrencia',{id:editingRecId}); toast('Excluída','ok')
     fecharModalRec(); await carregarRecorrencias(); render()
 }
+
+/* ── MODAL EXECUTAR RECORRÊNCIA ── */
+const execBackdrop = document.getElementById('modal-exec-backdrop')
+let execRecId = null, execRecData = null
+
+function abrirModalExec(recId, dateStr) {
+    const r = recorrencias.find(x => x.id === recId)
+    if (!r) return
+    if (execLookup[`${recId}_${dateStr}`]) return // já executada
+    execRecId = recId
+    execRecData = dateStr
+    const [y,m,d] = dateStr.split('-')
+    document.getElementById('exec-rec-titulo').textContent = r.titulo
+    document.getElementById('exec-rec-data').textContent = `${d}/${m}/${y}`
+    document.getElementById('exec-coluna').value = 'concluido'
+    document.getElementById('exec-obs').value = ''
+    abrirBackdrop(execBackdrop)
+    setTimeout(() => document.getElementById('exec-obs').focus(), 50)
+}
+
+function fecharModalExec() {
+    fecharBackdrop(execBackdrop)
+    execRecId = null; execRecData = null
+}
+
+async function confirmarExecucao() {
+    const r = recorrencias.find(x => x.id === execRecId)
+    if (!r || !execRecData) return
+    const obs = document.getElementById('exec-obs').value.trim()
+    const coluna = document.getElementById('exec-coluna').value
+    const payload = {
+        titulo: r.titulo,
+        descricao: r.descricao || '',
+        solucao: obs,
+        tipo: 'Outro',
+        prioridade: r.prioridade || 'media',
+        coluna,
+        projeto_id: r.projeto_id || null,
+        recorrencia_id: r.id,
+        tags: '', link: '', tempo_gasto: 0, solicitado_por: '',
+        data_inicio: execRecData,
+        data_fim: execRecData,
+    }
+    await req('criar', payload)
+    toast(`"${r.titulo}" registrada no board ✓`, 'ok')
+    fecharModalExec()
+    await carregarCards()
+    render()
+}
+
+execBackdrop.addEventListener('click', e => { if (e.target === execBackdrop) fecharModalExec() })
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && execBackdrop.classList.contains('flex')) fecharModalExec()
+    if (e.ctrlKey && e.key === 'Enter' && execBackdrop.classList.contains('flex')) { e.preventDefault(); confirmarExecucao() }
+})
 
 /* ── SELECTS ── */
 function buildProjetoSelects(){

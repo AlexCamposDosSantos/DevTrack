@@ -163,8 +163,8 @@ function criar(): void {
 
     $stmt = $db->prepare("INSERT INTO atividades
         (titulo, descricao, solucao, tipo, prioridade, coluna, projeto_id, tags,
-         link, tempo_gasto, data_inicio, data_fim, solicitado_por, ordem, alarme_em)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+         link, tempo_gasto, data_inicio, data_fim, solicitado_por, ordem, alarme_em, recorrencia_id)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
 
     $stmt->execute([
         $titulo,
@@ -182,6 +182,7 @@ function criar(): void {
         trim($d['solicitado_por'] ?? ''),
         $ordem,
         safeAlarme($d['alarme_em'] ?? null),
+        !empty($d['recorrencia_id']) ? (int)$d['recorrencia_id'] : null,
     ]);
 
     $id = $db->lastInsertId();

@@ -1,6 +1,6 @@
 <?php
 define('DB_PATH', __DIR__ . '/data/devtrack.sqlite');
-define('DB_VERSION', 7);
+define('DB_VERSION', 8);
 
 function getDB(): PDO {
     static $pdo = null;
@@ -154,6 +154,11 @@ function runMigrations(PDO $db): void {
     if ($version < 7) {
         try { $db->exec("ALTER TABLE recorrencias ADD COLUMN alarme_hora TEXT"); } catch (\Exception $e) {}
         $db->exec("PRAGMA user_version = 7");
+    }
+
+    if ($version < 8) {
+        try { $db->exec("ALTER TABLE atividades ADD COLUMN recorrencia_id INTEGER"); } catch (\Exception $e) {}
+        $db->exec("PRAGMA user_version = 8");
     }
 
     if ($version < 4) {
